@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tài Liệu Hướng Dẫn - V-Manga</title>
+    <title>Hướng Dẫn Sử Dụng - V-Manga Enterprise</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script>
@@ -18,6 +18,10 @@
                 'tet-gold': '#FFD600',
                 'tet-brown': '#3E2723',
                 'tet-green': '#1B5E20',
+                'tet-blue': '#0D47A1',
+              },
+              fontFamily: {
+                sans: ['Nunito', 'sans-serif'],
               }
             }
           }
@@ -29,266 +33,257 @@
             background-color: #FFFDF5;
             color: #3E2723;
             background-image: radial-gradient(#FFD600 1px, transparent 1px);
-            background-size: 20px 20px;
+            background-size: 24px 24px;
+            scroll-behavior: smooth;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
             border: 2px solid #FFF59D;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
         }
-        h1, h2, h3 { font-weight: 900; text-transform: uppercase; }
+        .glass-card:hover {
+            transform: translateY(-2px);
+        }
+        h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; }
         .step-badge {
             background: #FFD600;
-            color: #8E0000;
-            width: 36px; height: 36px;
+            color: #3E2723;
+            width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
+            border-radius: 12px;
             font-weight: 900;
-            border: 3px solid white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            font-size: 1.1rem;
+            border: 2px solid #3E2723;
+            box-shadow: 2px 2px 0px #3E2723;
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
         .code-tag {
             font-family: monospace;
-            background: #EDF2F7;
-            color: #2D3748;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            border: 1px solid #CBD5E0;
+            background: #ECEFF1;
+            color: #263238;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            border: 1px solid #CFD8DC;
             font-weight: bold;
         }
-        .error-code {
-            font-family: monospace;
-            font-weight: 900;
-            font-size: 1.1em;
+        .version-badge {
+            background: #212121;
+            color: #FFD600;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            border: 2px solid #FFD600;
         }
-        details > summary {
-            list-style: none;
-        }
-        details > summary::-webkit-details-marker {
-            display: none;
-        }
-        .highlight { color: #D50000; font-weight: 800; }
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: #FFF3E0; }
-        ::-webkit-scrollbar-thumb { background: #D50000; border-radius: 5px; border: 2px solid #FFF3E0; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: #FFF8E1; }
+        ::-webkit-scrollbar-thumb { background: #FFD600; border: 3px solid #FFF8E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FBC02D; }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-20">
-    <div class="max-w-5xl mx-auto space-y-10">
+    <div class="max-w-6xl mx-auto space-y-12">
+        
         <!-- Header -->
-        <div class="text-center mb-12 relative py-8">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-9xl opacity-[0.03] pointer-events-none select-none">🐉</div>
-            <h1 class="text-3xl md:text-5xl text-tet-red-dark mb-4 drop-shadow-sm leading-tight">Tài Liệu Hướng Dẫn & <br/>Khắc Phục Sự Cố</h1>
-            <p class="text-sm md:text-lg text-tet-brown font-bold bg-white/50 inline-block px-8 py-2 rounded-full border-2 border-tet-gold shadow-sm">
-                Phiên bản V-Manga 2026 - Tự động hóa quy trình sản xuất Truyện Tranh
+        <header class="text-center relative py-10">
+            <div class="inline-block relative">
+                <h1 class="text-4xl md:text-6xl text-tet-brown mb-2 drop-shadow-sm leading-tight">
+                    V-Manga <span class="text-tet-red">Guide</span>
+                </h1>
+                <div class="absolute -top-6 -right-12 rotate-12 bg-tet-gold text-tet-brown font-black px-3 py-1 text-sm border-2 border-tet-brown shadow-[4px_4px_0px_#3E2723]">
+                    AUTO v3.0
+                </div>
+            </div>
+            <p class="text-lg text-stone-600 font-bold mt-4">
+                Hệ thống tự động hóa quy trình sản xuất Truyện Tranh & Minh Họa
             </p>
+            <div class="mt-6 flex justify-center gap-3">
+                <span class="version-badge">BUILD 2024.12.25</span>
+                <span class="version-badge bg-white text-tet-blue border-tet-blue">ELECTRON</span>
+            </div>
+        </header>
+
+        <!-- Quick Nav -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="#workflow" class="bg-white p-4 rounded-2xl border-2 border-stone-200 hover:border-tet-red hover:shadow-lg transition text-center font-bold text-stone-700">🚀 Quy Trình</a>
+            <a href="#inputs" class="bg-white p-4 rounded-2xl border-2 border-stone-200 hover:border-tet-gold hover:shadow-lg transition text-center font-bold text-stone-700">📂 Nhập Liệu</a>
+            <a href="#tracker" class="bg-white p-4 rounded-2xl border-2 border-stone-200 hover:border-tet-green hover:shadow-lg transition text-center font-bold text-stone-700">🎬 Theo Dõi</a>
+            <a href="#errors" class="bg-white p-4 rounded-2xl border-2 border-stone-200 hover:border-red-400 hover:shadow-lg transition text-center font-bold text-stone-700">🚨 Khắc Phục Lỗi</a>
         </div>
 
-        <!-- Section: Bảng mã lỗi API -->
-        <div class="glass-card rounded-[32px] overflow-hidden border-2 border-red-200 shadow-xl">
+        <!-- Section 1: Workflow -->
+        <section id="workflow" class="glass-card rounded-[32px] p-8 md:p-12 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10 text-9xl select-none">📊</div>
+            <h2 class="text-3xl text-tet-brown mb-8 border-l-8 border-tet-gold pl-4">Quy Trình Làm Việc Chuẩn</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Step 1 -->
+                <div class="relative">
+                    <div class="step-badge mb-4">1</div>
+                    <h3 class="text-xl mb-2">Chuẩn Bị Data</h3>
+                    <p class="text-sm text-stone-600 leading-relaxed">
+                        Thu thập ảnh nhân vật (Character Refs) và file Excel kịch bản. Đảm bảo tên file ảnh rõ ràng, không dấu tiếng Việt.
+                    </p>
+                </div>
+                <!-- Step 2 -->
+                <div class="relative">
+                    <div class="step-badge mb-4 bg-white border-dashed text-stone-400">2</div>
+                    <h3 class="text-xl mb-2">Tạo Job</h3>
+                    <p class="text-sm text-stone-600 leading-relaxed">
+                        Tại tab <strong class="text-tet-red">Generator</strong>, trỏ đường dẫn tới thư mục ảnh và file Excel. Hệ thống sẽ tự khớp tên nhân vật để tạo Job.
+                    </p>
+                </div>
+                <!-- Step 3 -->
+                <div class="relative">
+                    <div class="step-badge mb-4 bg-tet-red text-white border-tet-red">3</div>
+                    <h3 class="text-xl mb-2">Chạy ToolFlow</h3>
+                    <p class="text-sm text-stone-600 leading-relaxed">
+                        Mở tab <strong class="text-tet-red">Tracker</strong>. Nhấn nút "Chạy Tool" để kích hoạt phần mềm AI (ToolFlows.exe). Hệ thống sẽ tự động sinh ảnh.
+                    </p>
+                </div>
+                <!-- Step 4 -->
+                <div class="relative">
+                    <div class="step-badge mb-4 bg-tet-green text-white border-tet-green">4</div>
+                    <h3 class="text-xl mb-2">Hoàn Tất</h3>
+                    <p class="text-sm text-stone-600 leading-relaxed">
+                        Ảnh sau khi tạo xong sẽ tự động hiện lên bảng theo dõi. Bạn có thể bấm vào để xem lớn hoặc xóa làm lại.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Detailed Inputs -->
+        <section id="inputs" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-card rounded-[32px] p-8">
+                <h2 class="text-2xl text-tet-brown mb-6 flex items-center gap-3">
+                    <span class="text-3xl">📂</span>
+                    Cấu Trúc Input
+                </h2>
+                <div class="space-y-6">
+                    <div class="bg-white p-4 rounded-xl border border-stone-200">
+                        <h4 class="font-bold text-stone-800 mb-2">A. File Excel Kịch Bản</h4>
+                        <p class="text-sm text-stone-600 mb-2">File Excel cần có các cột bắt buộc sau (Tên cột phải chính xác):</p>
+                        <ul class="text-sm space-y-2 list-disc list-inside text-stone-600 font-mono bg-stone-50 p-3 rounded-lg border border-stone-100">
+                            <li><span class="text-tet-red">stt</span>: Số thứ tự (1, 2, 3...)</li>
+                            <li><span class="text-tet-red">Characters</span>: Tên nhân vật xuất hiện (cách nhau bằng dấu phẩy). VD: <code>Lan, Diep</code></li>
+                            <li><span class="text-tet-red">Description</span>: Mô tả chi tiết cảnh (Prompt).</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-stone-200">
+                        <h4 class="font-bold text-stone-800 mb-2">B. Thư Mục Ảnh Nhân Vật</h4>
+                        <p class="text-sm text-stone-600">
+                            Tên file ảnh trong thư mục phải chứa tên nhân vật được ghi trong cột <code>Characters</code> của Excel.
+                        </p>
+                        <div class="mt-2 p-3 bg-yellow-50 text-yellow-800 text-xs rounded-lg border border-yellow-200">
+                            <strong>Ví dụ:</strong> Nếu Excel ghi nhân vật là <code>Lan</code>, thì trong folder phải có file ảnh tên là <code>Lan.png</code> hoặc <code>Lan_Outfit1.jpg</code>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[32px] p-8" id="tracker">
+                <h2 class="text-2xl text-tet-brown mb-6 flex items-center gap-3">
+                    <span class="text-3xl">🎬</span>
+                    Theo Dõi & Quản Lý
+                </h2>
+                <div class="space-y-4 text-sm text-stone-700 leading-7">
+                    <p>
+                        Tab <strong>Tracker</strong> là trung tâm chỉ huy. Tại đây bạn quản lý các Job đang chạy.
+                    </p>
+                    
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 bg-white p-3 rounded-xl border border-stone-100 shadow-sm">
+                            <span class="w-3 h-3 rounded-full bg-stone-300"></span>
+                            <span><strong>Trạng thái Chờ (Pending):</strong> Job đã được tạo nhưng chưa có ảnh kết quả.</span>
+                        </li>
+                        <li class="flex items-center gap-3 bg-white p-3 rounded-xl border border-stone-100 shadow-sm">
+                            <span class="w-3 h-3 rounded-full bg-black"></span>
+                            <span><strong>Hoàn Thành (Completed):</strong> Đã tìm thấy ảnh kết quả trong thư mục Output. Bấm vào ảnh nhỏ để xem Preview.</span>
+                        </li>
+                    </ul>
+
+                    <div class="mt-4 pt-4 border-t border-stone-200">
+                        <h4 class="font-bold mb-2">Các nút chức năng:</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex items-center gap-2"><span class="bg-stone-200 p-1 rounded">⚙️</span> Cấu hình đường dẫn ToolFlows.exe</div>
+                            <div class="flex items-center gap-2"><span class="bg-manga-accent text-white p-1 rounded text-xs">▶</span> Chạy Tool tạo ảnh</div>
+                            <div class="flex items-center gap-2"><span class="bg-yellow-100 p-1 rounded">🔄</span> Đặt lại các Job bị kẹt</div>
+                            <div class="flex items-center gap-2"><span class="bg-red-100 p-1 rounded">🗑</span> Xóa ảnh và làm lại</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Error Codes -->
+        <section id="errors" class="glass-card rounded-[32px] overflow-hidden border-2 border-red-100 shadow-xl">
             <div class="bg-red-50 p-6 border-b border-red-100 flex items-center gap-3">
                 <span class="text-3xl">🚨</span>
                 <div>
-                    <h2 class="text-xl text-tet-red-dark">Từ Điển Mã Lỗi (Error Codes)</h2>
-                    <p class="text-sm text-stone-500 font-bold">Các mã lỗi thường gặp khi làm việc với Google Gemini API</p>
+                    <h2 class="text-xl text-tet-red-dark">Từ Điển Mã Lỗi (Troubleshooting)</h2>
+                    <p class="text-sm text-stone-500 font-bold">Các vấn đề thường gặp và cách xử lý nhanh.</p>
                 </div>
             </div>
             
-            <div class="divide-y divide-stone-100">
-                <!-- 400 -->
-                <div class="p-6 hover:bg-stone-50 transition-colors">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-stone-200 text-stone-700 px-3 py-1 rounded-lg error-code">400</div>
-                        <div>
-                            <h3 class="text-stone-800 text-lg mb-1">Bad Request (Yêu cầu không hợp lệ)</h3>
-                            <p class="text-sm text-stone-600 mb-2">Dữ liệu gửi đi bị lỗi format hoặc Prompt quá dài, chứa nội dung bị cấm.</p>
-                            <div class="bg-red-50 p-3 rounded-xl text-xs text-red-800 font-medium border border-red-100">
-                                💡 <strong>Khắc phục:</strong> Kiểm tra lại nội dung Prompt (Idea). Xóa bớt các ký tự đặc biệt lạ. Giảm bớt số lượng ảnh upload nếu quá nặng.
-                            </div>
-                        </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-0 divide-y md:divide-y-0 md:divide-x divide-red-100">
+                <div class="p-6">
+                    <h3 class="text-stone-800 text-lg mb-3 flex items-center gap-2">
+                        <span class="bg-stone-200 text-stone-700 px-2 py-0.5 rounded text-sm font-black">LỖI 1</span>
+                        Không hiện ảnh Preview
+                    </h3>
+                    <p class="text-sm text-stone-600 mb-3">Dù Tool đã chạy xong nhưng trên phần mềm vẫn hiện "Pending" hoặc không thấy ảnh.</p>
+                    <div class="bg-white p-4 rounded-xl text-xs text-stone-700 border border-stone-200 shadow-inner">
+                        <strong>Nguyên nhân:</strong>
+                        <ul class="list-disc list-inside mt-1 mb-2">
+                            <li>Tên file ảnh xuất ra không khớp quy tắc: <code>Image_Job_{ID}_{Tên}.png</code>.</li>
+                            <li>Đường dẫn thư mục chứa ký tự đặc biệt.</li>
+                        </ul>
+                        <strong>Khắc phục:</strong>
+                        <ul class="list-disc list-inside mt-1">
+                            <li>Kiểm tra lại cấu hình Output Name ở tab Generator.</li>
+                            <li>Bấm nút <strong>Đặt lại tất cả</strong> ở thanh công cụ để quét lại.</li>
+                        </ul>
                     </div>
                 </div>
 
-                <!-- 401 -->
-                <div class="p-6 hover:bg-stone-50 transition-colors">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg error-code">401</div>
-                        <div>
-                            <h3 class="text-stone-800 text-lg mb-1">Unauthenticated (Lỗi xác thực)</h3>
-                            <p class="text-sm text-stone-600 mb-2">API Key bị sai, đã bị xóa, hoặc chưa được kích hoạt tính năng thanh toán (với model Pro).</p>
-                            <div class="bg-yellow-50 p-3 rounded-xl text-xs text-yellow-800 font-medium border border-yellow-100">
-                                💡 <strong>Khắc phục:</strong> Vào tab <span class="font-bold">Quản lý API Key</span>, xóa Key cũ và thêm Key mới chính xác từ Google AI Studio.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 403 -->
-                <div class="p-6 hover:bg-stone-50 transition-colors">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-orange-100 text-orange-800 px-3 py-1 rounded-lg error-code">403</div>
-                        <div>
-                            <h3 class="text-stone-800 text-lg mb-1">Permission Denied (Từ chối truy cập)</h3>
-                            <p class="text-sm text-stone-600 mb-2">Thường gặp khi truy cập Model không khả dụng tại quốc gia (Region lock) hoặc tài khoản bị Google khóa.</p>
-                            <div class="bg-orange-50 p-3 rounded-xl text-xs text-orange-800 font-medium border border-orange-100">
-                                💡 <strong>Khắc phục:</strong> Đổi sang Model <span class="code-tag">Gemini 2.5 Flash</span> hoặc dùng VPN đổi IP sang Mỹ/Singapore.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 404 -->
-                <div class="p-6 hover:bg-stone-50 transition-colors">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg error-code">404</div>
-                        <div>
-                            <h3 class="text-stone-800 text-lg mb-1">Not Found (Không tìm thấy Model)</h3>
-                            <p class="text-sm text-stone-600 mb-2">Tên Model trong cấu hình không tồn tại hoặc đã bị Google ngừng hỗ trợ.</p>
-                            <div class="bg-purple-50 p-3 rounded-xl text-xs text-purple-800 font-medium border border-purple-100">
-                                💡 <strong>Khắc phục:</strong> Chọn lại Model trong danh sách (Ví dụ: Gemini 2.5 Flash Lite) thay vì dùng Model cũ.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 429 -->
-                <div class="p-6 hover:bg-stone-50 transition-colors bg-red-50/50">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-red-200 text-red-900 px-3 py-1 rounded-lg error-code">429</div>
-                        <div>
-                            <h3 class="text-stone-800 text-lg mb-1">Resource Exhausted (Hết lượt / Quota)</h3>
-                            <p class="text-sm text-stone-600 mb-2">Đây là lỗi phổ biến nhất. Bạn đã dùng hết số lượng request miễn phí trong phút/ngày.</p>
-                            <div class="bg-white p-3 rounded-xl text-xs text-red-600 font-medium border border-red-200 shadow-sm">
-                                💡 <strong>Khắc phục:</strong> 
-                                <ul class="list-disc list-inside mt-1 ml-1 space-y-1">
-                                    <li>Chờ khoảng 1-2 phút rồi thử lại.</li>
-                                    <li>Tạo thêm nhiều API Key khác (từ các tài khoản Google khác nhau) và thêm vào phần mềm để luân phiên sử dụng.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 500 & 503 -->
-                <div class="p-6 hover:bg-stone-50 transition-colors">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-stone-800 text-white px-3 py-1 rounded-lg error-code">5xx</div>
-                        <div>
-                            <h3 class="text-stone-800 text-lg mb-1">Server Errors (500, 502, 503)</h3>
-                            <p class="text-sm text-stone-600 mb-2">Lỗi từ phía máy chủ Google (quá tải, bảo trì).</p>
-                            <div class="bg-stone-100 p-3 rounded-xl text-xs text-stone-600 font-medium border border-stone-200">
-                                💡 <strong>Khắc phục:</strong> Không thể can thiệp. Vui lòng chờ vài phút và nhấn thử lại.
-                            </div>
-                        </div>
+                <div class="p-6">
+                    <h3 class="text-stone-800 text-lg mb-3 flex items-center gap-2">
+                        <span class="bg-stone-200 text-stone-700 px-2 py-0.5 rounded text-sm font-black">LỖI 2</span>
+                        ToolFlows không chạy
+                    </h3>
+                    <p class="text-sm text-stone-600 mb-3">Bấm nút "Chạy Tool" nhưng không có gì xảy ra.</p>
+                    <div class="bg-white p-4 rounded-xl text-xs text-stone-700 border border-stone-200 shadow-inner">
+                        <strong>Khắc phục:</strong>
+                        <ul class="list-disc list-inside mt-1">
+                            <li>Bấm icon <span class="bg-stone-200 px-1 rounded">⚙️</span> và chọn lại đúng file <code>.exe</code> của tool.</li>
+                            <li>Chạy phần mềm V-Manga với quyền Administrator.</li>
+                            <li>Đảm bảo file Excel Input đã được lưu thành công.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Section: Hướng dẫn chức năng chi tiết -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            <!-- Cột 1: Generator & Input -->
-            <div class="space-y-8">
-                <div class="glass-card rounded-[32px] p-8">
-                    <h2 class="text-2xl text-tet-brown mb-6 flex items-center gap-2 border-b-2 border-tet-gold/30 pb-3">
-                        <span>✨</span> Tab Generator (Kịch Bản)
-                    </h2>
-                    
-                    <div class="space-y-6">
-                        <!-- Path Ảnh -->
-                        <div class="relative pl-6 border-l-4 border-tet-gold">
-                            <h3 className="font-bold text-lg text-stone-800">1. Quy tắc Path Ảnh (Quan trọng)</h3>
-                            <p class="text-sm text-stone-600 mt-1 mb-2">
-                                Phần mềm lưu <span class="highlight">đường dẫn tuyệt đối</span> (Full Path) của ảnh vào Excel chứ không copy ảnh vào phần mềm.
-                            </p>
-                            <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-200 text-xs text-yellow-800">
-                                ⚠️ <strong>Cảnh báo:</strong> Sau khi xuất Excel, <span class="underline decoration-2 decoration-red-400">tuyệt đối không được đổi tên, di chuyển hoặc xóa file ảnh gốc</span> trên máy tính. Nếu không ToolFlows sẽ báo lỗi không tìm thấy ảnh.
-                            </div>
-                        </div>
-
-                        <!-- Cơ chế I2V -->
-                        <div class="relative pl-6 border-l-4 border-tet-green">
-                            <h3 className="font-bold text-lg text-stone-800">2. Chế độ Text vs I2V</h3>
-                            <ul class="text-sm text-stone-600 space-y-2 mt-2">
-                                <li><strong>TEXT Mode:</strong> Nếu không upload ảnh nào, AI sẽ tự sáng tạo hình ảnh mô tả.</li>
-                                <li><strong>I2V Mode:</strong> Chỉ cần upload 1 ảnh, AI sẽ tự động chuyển sang chế độ Image-to-Image, sử dụng ảnh đó làm tham chiếu (Reference).</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-card rounded-[32px] p-8">
-                    <h2 class="text-2xl text-tet-brown mb-6 flex items-center gap-2 border-b-2 border-tet-gold/30 pb-3">
-                        <span>🔑</span> Quản lý API Key
-                    </h2>
-                    <p class="text-sm text-stone-600 mb-4">
-                        Hệ thống hỗ trợ lưu nhiều Key cùng lúc. Bạn nên chuẩn bị ít nhất 3 Key để tránh bị gián đoạn do lỗi 429 (Hết lượt).
-                    </p>
-                    <ul class="text-sm text-stone-600 space-y-2 list-disc list-inside">
-                        <li>Nhấn nút <span class="inline-block p-1 bg-tet-gold text-white rounded shadow-sm"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span> trên Header để vào quản lý.</li>
-                        <li>Nút xanh <span class="text-emerald-600 font-bold">✓</span>: Chọn Key đang hoạt động.</li>
-                        <li>Nút đỏ <span class="text-red-500 font-bold">🗑</span>: Xóa Key hỏng.</li>
-                    </ul>
-                </div>
+        <!-- Footer Info -->
+        <footer class="text-center pt-8 border-t border-stone-200 space-y-4">
+            <div class="flex justify-center gap-6 text-sm font-bold text-stone-500 uppercase tracking-widest">
+                <span>Phiên bản: 1.0.0 </span>
+                <span>•</span>
+                <span>Phát hành: 02/2026</span>
+                <span>•</span>
+                <span>Support: @bescuong:chat.vfastsoft.com</span>
             </div>
-
-            <!-- Cột 2: Tracker & Sản xuất -->
-            <div class="space-y-8">
-                <div class="glass-card rounded-[32px] p-8">
-                    <h2 class="text-2xl text-tet-brown mb-6 flex items-center gap-2 border-b-2 border-tet-gold/30 pb-3">
-                        <span>🎬</span> Tab Tracker (Xưởng Truyện)
-                    </h2>
-
-                    <div class="space-y-8">
-                        <!-- Auto Reload -->
-                        <div>
-                            <h3 className="font-bold text-lg text-stone-800 flex items-center gap-2">
-                                <span class="step-badge text-xs">A</span> Cơ chế Auto-Reload
-                            </h3>
-                            <p class="text-sm text-stone-600 mt-2">
-                                Phần mềm có một bộ đếm chạy ngầm <strong>mỗi 2 giây</strong>. Nó sẽ quét thư mục chứa file Excel để tìm các file ảnh `.png/.jpg` mới được tạo ra.
-                            </p>
-                            <p class="text-xs text-stone-500 mt-1 italic">
-                                * Điều kiện nhận diện: File ảnh phải có tên chứa mã Job (VD: `Job_1.png`).
-                            </p>
-                        </div>
-
-                        <!-- ToolFlows -->
-                        <div>
-                            <h3 className="font-bold text-lg text-stone-800 flex items-center gap-2">
-                                <span class="step-badge text-xs">B</span> Kết nối ToolFlows
-                            </h3>
-                            <div class="mt-2 text-sm text-stone-600 space-y-2">
-                                <p>1. Nhấn icon <span class="bg-stone-200 px-1 rounded">⚙️</span> (Cài đặt) cạnh nút "CHẠY TOOL".</p>
-                                <p>2. Trỏ đường dẫn đến file <code>ToolFlows.exe</code> (hoặc tool tạo ảnh bất kỳ).</p>
-                                <p>3. Sau đó nhấn nút "CHẠY TOOL" để khởi chạy tool ngay từ phần mềm.</p>
-                            </div>
-                        </div>
-
-                        <!-- FFmpeg -->
-                        <div>
-                            <h3 className="font-bold text-lg text-stone-800 flex items-center gap-2">
-                                <span class="step-badge text-xs">C</span> Quản lý Thư mục
-                            </h3>
-                            <div class="grid grid-cols-1 gap-3 mt-3">
-                                <div class="border border-tet-green/30 bg-emerald-50/50 p-3 rounded-xl">
-                                    <span class="font-bold text-tet-green block text-xs uppercase mb-1">Mở Thư Mục</span>
-                                    <span class="text-xs text-stone-600">Truy cập nhanh vào folder chứa ảnh kết quả.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="text-center pt-10 pb-6 border-t border-stone-200/50">
-             <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">© 2026 V-Manga | Developed by BeCuong18</p>
-        </div>
+            <p class="text-xs text-stone-400">
+                © 2026 V-Manga Enterprise. All rights reserved.<br>
+                Sản phẩm được tối ưu hóa cho quy trình sản xuất truyện tranh công nghiệp.
+            </p>
+        </footer>
     </div>
 </body>
 </html>
