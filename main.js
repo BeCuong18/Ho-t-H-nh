@@ -13,6 +13,7 @@ autoUpdater.logger = require('electron-log');
 autoUpdater.logger.transports.file.level = 'info';
 
 const fileWatchers = new Map();
+const folderWatchers = new Map(); // Theo dõi thư mục ảnh
 const jobStateTimestamps = new Map(); 
 const fileJobStates = new Map();
 
@@ -108,24 +109,23 @@ function getFilesFromDirectories(dirs) {
 function scanVideosInternal(jobs, excelFilePath) {
     const rootDir = path.dirname(excelFilePath);
     const excelNameNoExt = path.basename(excelFilePath, '.xlsx');
+    // Thư mục con có tên trùng với tên file Excel (theo yêu cầu)
     const subDir = path.join(rootDir, excelNameNoExt);
     
-    // Quét cả thư mục gốc và thư mục con (ưu tiên thư mục con nếu trùng tên)
+    // Quét cả thư mục gốc và thư mục con
     const resultFiles = getFilesFromDirectories([rootDir, subDir]);
     
     return jobs.map(job => {
-        // Nếu đã có đường dẫn và file tồn tại, giữ nguyên (ưu tiên performance)
+        // Nếu đã có đường dẫn và file tồn tại, giữ nguyên để tối ưu
         if (job.videoPath && fs.existsSync(job.videoPath)) return job;
         
-        // 1. ƯU TIÊN: Tìm theo cấu trúc Image_{JOB_ID}_{VIDEO_NAME}
-        // Ví dụ: Image_Job_1_Manga_Output_1.png
-        // Tìm trong thư mục con trước
+        // Logic tìm file theo yêu cầu: Image_Job_1_Manga_Output_1.png
+        // Pattern: Image_{JOB_ID}_{VIDEO_NAME}
         if (job.id && job.videoName) {
             const specificPattern = `Image_${job.id}_${job.videoName}`.toLowerCase();
             
             const specificMatch = resultFiles.find(f => {
                 const nameNoExt = path.parse(f).name.toLowerCase();
-                // So sánh chính xác tên file (không tính đuôi mở rộng, không phân biệt hoa thường)
                 return nameNoExt === specificPattern;
             });
 
@@ -134,7 +134,7 @@ function scanVideosInternal(jobs, excelFilePath) {
             }
         }
 
-        // 2. FALLBACK: Logic cũ (Tìm tên file chứa videoName)
+        // Fallback: Logic tìm kiếm cũ (tìm tên file chứa videoName)
         if (job.videoName) {
              const cleanName = job.videoName.trim();
              const escapedName = cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -328,30 +328,76 @@ ipcMain.handle('delete-file', async (event, filePath) => {
     }
 });
 
+// === QUAN TRỌNG: Hàm xử lý sự kiện file/folder thay đổi ===
+const handleFileOrFolderChange = (event, filePath) => {
+    try {
+        // Debounce nhẹ để tránh gọi liên tục
+        setTimeout(() => {
+            if (!fs.existsSync(filePath)) return;
+            const buf = fs.readFileSync(filePath);
+            const raw = parseExcelData(buf);
+            // Quét lại thư mục để tìm ảnh mới
+            const { updatedJobs } = syncStatsAndState(filePath, raw, false);
+            // Gửi dữ liệu mới nhất về frontend
+            // Lưu ý: Chúng ta gửi lại nội dung Excel, nhưng ở frontend App.tsx sẽ merge với state videoPath
+            // Tuy nhiên, để đảm bảo videoPath mới được cập nhật, ta cần cơ chế tốt hơn ở frontend hoặc gửi kèm metadata
+            // Ở đây đơn giản nhất là trigger sự kiện đọc lại file
+            event.sender.send('file-content-updated', { path: filePath, content: buf });
+        }, 500);
+    } catch(e) {}
+};
+
 ipcMain.on('start-watching-file', (event, filePath) => {
     if (fileWatchers.has(filePath)) return;
+    
+    // 1. Quét lần đầu ngay lập tức
     try { if (fs.existsSync(filePath)) {
          const raw = parseExcelData(fs.readFileSync(filePath));
          syncStatsAndState(filePath, raw, true);
     }} catch (e) {}
     
-    fileWatchers.set(filePath, fs.watch(filePath, (ev) => {
+    // 2. Watch file Excel
+    const fileWatcher = fs.watch(filePath, (ev) => {
         if (ev === 'change') {
-            try {
-                // Short timeout to allow writes to finish
-                setTimeout(() => {
-                    if (!fs.existsSync(filePath)) return;
-                    const buf = fs.readFileSync(filePath);
-                    const raw = parseExcelData(buf);
-                    const { updatedJobs } = syncStatsAndState(filePath, raw, false);
-                    event.sender.send('file-content-updated', { path: filePath, content: buf });
-                }, 100);
-            } catch(e) {}
+            handleFileOrFolderChange(event, filePath);
         }
-    }));
+    });
+    fileWatchers.set(filePath, fileWatcher);
+
+    // 3. Watch thư mục con chứa ảnh (Manga_Output)
+    // Để khi Tool tạo ảnh xong, App tự cập nhật mà không cần file Excel thay đổi
+    const rootDir = path.dirname(filePath);
+    const excelNameNoExt = path.basename(filePath, '.xlsx');
+    const subDir = path.join(rootDir, excelNameNoExt);
+
+    if (fs.existsSync(subDir)) {
+        // Watch thư mục con
+        const folderWatcher = fs.watch(subDir, (ev, filename) => {
+            // Khi có file thêm/xóa trong thư mục con, ta trigger reload lại state của file Excel chính
+            handleFileOrFolderChange(event, filePath);
+        });
+        folderWatchers.set(filePath, folderWatcher);
+    } else {
+        // Nếu thư mục chưa tồn tại (chưa chạy tool), ta thử watch thư mục cha để bắt sự kiện tạo thư mục con?
+        // Đơn giản hơn: Set interval kiểm tra thư mục con mỗi 5s
+        const checkInterval = setInterval(() => {
+            if (fs.existsSync(subDir)) {
+                // Thư mục đã xuất hiện, bắt đầu watch và clear interval
+                const folderWatcher = fs.watch(subDir, (ev, filename) => {
+                    handleFileOrFolderChange(event, filePath);
+                });
+                folderWatchers.set(filePath, folderWatcher);
+                clearInterval(checkInterval);
+            }
+        }, 5000);
+        // Lưu interval vào map để cleanup nếu cần (tạm thời bỏ qua cho đơn giản)
+    }
 });
 
-ipcMain.on('stop-watching-file', (e, p) => { if (fileWatchers.has(p)) { fileWatchers.get(p).close(); fileWatchers.delete(p); } });
+ipcMain.on('stop-watching-file', (e, p) => { 
+    if (fileWatchers.has(p)) { fileWatchers.get(p).close(); fileWatchers.delete(p); }
+    if (folderWatchers.has(p)) { folderWatchers.get(p).close(); folderWatchers.delete(p); }
+});
 
 ipcMain.on('open-folder', (e, p) => fs.existsSync(p) && shell.openPath(p));
 ipcMain.on('open-video-path', (e, p) => fs.existsSync(p) && shell.openPath(p));

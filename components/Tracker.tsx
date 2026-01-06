@@ -47,10 +47,10 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
     const getLocalFileUrl = (filePath: string | undefined) => {
         if (!filePath) return '';
         if (!isDesktop) return '';
-        // Normalize slashes
+        // Chuẩn hóa dấu gạch chéo ngược thành xuôi cho URL
         const normalized = filePath.replace(/\\/g, '/');
-        // Encode URI to handle spaces and special chars, but valid for file protocol
-        return `file://${encodeURI(normalized)}`;
+        // Encode URI để xử lý dấu cách và ký tự đặc biệt, thêm file:/// để hỗ trợ Windows drive absolute paths
+        return `file:///${encodeURI(normalized)}`;
     };
 
     const renderRefImages = (job: VideoJob) => {
