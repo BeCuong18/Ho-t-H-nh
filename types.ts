@@ -59,7 +59,7 @@ export interface TrackedFile {
 
 export interface AppConfig {
   machineId?: string;
-  // Bỏ licenseKey, apiKey
+  licenseKey?: string; // Đã thêm
   lastFolder?: string;
   toolFlowPath?: string;
 }

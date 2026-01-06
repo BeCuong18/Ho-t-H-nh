@@ -6,7 +6,7 @@ const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 const { execFile, spawn, execSync } = require('child_process');
 const XLSX = require('xlsx');
-const { randomUUID } = require('crypto');
+const crypto = require('crypto'); // Ensure crypto is required
 
 // Configure logging for autoUpdater
 autoUpdater.logger = require('electron-log');
@@ -20,6 +20,10 @@ const userDataPath = app.getPath('userData');
 const configPath = path.join(userDataPath, 'app-config.json');
 const statsPath = path.join(userDataPath, 'stats.json'); 
 let mainWindow;
+
+// --- Security / Activation Helpers ---
+// KHÓA BÍ MẬT - PHẢI GIỐNG HỆT FILE admin-keygen.html
+const ACTIVATION_SECRET = 'your-super-secret-key-for-mv-prompt-generator-pro-2024'; 
 
 function readConfig() {
   try {
@@ -39,6 +43,49 @@ function writeConfig(config) {
   } catch (error) {
     console.error('Error writing config file:', error);
   }
+}
+
+// Get or Create Machine ID
+function getMachineId() {
+    let config = readConfig();
+    if (!config.machineId) {
+        config.machineId = crypto.randomUUID(); // UUID chuẩn thường là lowercase
+        writeConfig(config);
+    }
+    return config.machineId;
+}
+
+// Verify License Key (HMAC-SHA256)
+// Format Key: machineId.signature
+function verifyLicenseKey(machineId, inputKey) {
+    try {
+        if (!inputKey || !inputKey.includes('.')) return false;
+        
+        const parts = inputKey.trim().split('.');
+        // Nếu machineId chứa dấu chấm (ít gặp với UUID nhưng đề phòng), ta lấy phần cuối làm signature
+        const inputSignature = parts.pop(); 
+        const inputMachineId = parts.join('.');
+
+        // 1. Kiểm tra xem Key này có phải dành cho máy này không
+        if (inputMachineId !== machineId) return false;
+
+        // 2. Tính toán lại chữ ký mong đợi
+        const hmac = crypto.createHmac('sha256', ACTIVATION_SECRET);
+        hmac.update(inputMachineId);
+        const expectedSignature = hmac.digest('hex');
+
+        // 3. So sánh (Case-insensitive để an toàn)
+        return inputSignature.toLowerCase() === expectedSignature.toLowerCase();
+    } catch (e) {
+        console.error("Lỗi xác thực key:", e);
+        return false;
+    }
+}
+
+function checkActivationStatus() {
+    const config = readConfig();
+    if (!config.machineId || !config.licenseKey) return false;
+    return verifyLicenseKey(config.machineId, config.licenseKey);
 }
 
 function getFilesFromDirectories(dirs) {
@@ -62,11 +109,30 @@ function scanVideosInternal(jobs, excelFilePath) {
     const rootDir = path.dirname(excelFilePath);
     const excelNameNoExt = path.basename(excelFilePath, '.xlsx');
     const subDir = path.join(rootDir, excelNameNoExt);
+    
+    // Quét cả thư mục gốc và thư mục con (ưu tiên thư mục con nếu trùng tên)
     const resultFiles = getFilesFromDirectories([rootDir, subDir]);
     
     return jobs.map(job => {
         if (job.videoPath && fs.existsSync(job.videoPath)) return job;
         
+        // 1. ƯU TIÊN: Tìm theo cấu trúc Image_{JOB_ID}_{VIDEO_NAME}
+        // Ví dụ: Image_Job_1_Manga_Output_1.png
+        if (job.id && job.videoName) {
+            const specificPattern = `Image_${job.id}_${job.videoName}`;
+            
+            const specificMatch = resultFiles.find(f => {
+                const nameNoExt = path.parse(f).name;
+                // So sánh chính xác tên file (không tính đuôi mở rộng)
+                return nameNoExt === specificPattern;
+            });
+
+            if (specificMatch) {
+                return { ...job, videoPath: specificMatch, status: 'Completed' };
+            }
+        }
+
+        // 2. FALLBACK: Logic cũ (Tìm tên file chứa videoName)
         if (job.videoName) {
              const cleanName = job.videoName.trim();
              const escapedName = cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -142,6 +208,29 @@ app.whenReady().then(() => {
 // IPC Handlers
 ipcMain.handle('get-app-config', () => readConfig());
 ipcMain.handle('save-app-config', async (e, cfg) => { writeConfig({ ...readConfig(), ...cfg }); return { success: true }; });
+
+// --- ACTIVATION IPC HANDLERS ---
+ipcMain.handle('get-machine-id', () => {
+    return { machineId: getMachineId() };
+});
+
+ipcMain.handle('check-activation', () => {
+    return { activated: checkActivationStatus() };
+});
+
+ipcMain.handle('activate-app', (e, key) => {
+    const machineId = getMachineId();
+    const isValid = verifyLicenseKey(machineId, key);
+    
+    if (isValid) {
+        const config = readConfig();
+        config.licenseKey = key.trim();
+        writeConfig(config);
+        return { success: true };
+    }
+    return { success: false };
+});
+// -------------------------------
 
 ipcMain.handle('save-file-dialog', async (event, { defaultPath, fileContent }) => {
     const res = await dialog.showSaveDialog(mainWindow, { title: 'Lưu File V-Manga', defaultPath, filters: [{ name: 'Excel', extensions: ['xlsx'] }] });

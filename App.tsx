@@ -4,7 +4,9 @@ import * as XLSX from 'xlsx';
 import { TrackedFile, VideoJob } from './types';
 import { MangaProcessor } from './components/Generator';
 import { Tracker } from './components/Tracker';
+import { Activation } from './components/Activation';
 import { isElectron, getIpcRenderer } from './utils/platform';
+import { LoaderIcon } from './components/Icons';
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'generator' | 'tracker'>('generator');
@@ -12,6 +14,11 @@ const App: React.FC = () => {
     const [activeTrackerFileIndex, setActiveTrackerFileIndex] = useState(0);
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success' | 'info', message: string } | null>(null);
     const [ffmpegFound, setFfmpegFound] = useState<boolean | null>(null);
+
+    // Activation State
+    const [isActivated, setIsActivated] = useState(false);
+    const [machineId, setMachineId] = useState('');
+    const [checkingActivation, setCheckingActivation] = useState(true);
 
     // Refs for Web File Opening
     const webOpenFileRef = useRef<HTMLInputElement>(null);
@@ -31,8 +38,44 @@ const App: React.FC = () => {
         }
     }, [feedback]);
 
+    // Check Activation on Mount
     useEffect(() => {
+        const check = async () => {
+            if (isDesktop && ipcRenderer) {
+                try {
+                    // Get Machine ID
+                    const idRes = await ipcRenderer.invoke('get-machine-id');
+                    setMachineId(idRes.machineId);
+
+                    // Check if activated
+                    const statusRes = await ipcRenderer.invoke('check-activation');
+                    setIsActivated(statusRes.activated);
+                } catch (e) {
+                    console.error("Activation check failed", e);
+                }
+            } else {
+                // Web mode implies no activation needed for demo
+                setIsActivated(true);
+            }
+            setCheckingActivation(false);
+        };
+        check();
+    }, []);
+
+    const handleActivateApp = async (key: string): Promise<boolean> => {
         if (isDesktop && ipcRenderer) {
+            const res = await ipcRenderer.invoke('activate-app', key);
+            if (res.success) {
+                setIsActivated(true);
+                return true;
+            }
+            return false;
+        }
+        return false;
+    };
+
+    useEffect(() => {
+        if (isDesktop && ipcRenderer && isActivated) {
             ipcRenderer.on('file-content-updated', (_:any, {path, content}:any) => {
                  const wb = XLSX.read(content, {type:'buffer'});
                  const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, blankrows:false}).slice(1) as any[][];
@@ -57,11 +100,11 @@ const App: React.FC = () => {
             });
             ipcRenderer.invoke('check-ffmpeg').then((res:any) => setFfmpegFound(res.found));
         }
-    }, []); 
+    }, [isActivated]); 
 
     // Auto-Reset Stuck Jobs Watchdog (Every minute)
     useEffect(() => {
-        if (!isDesktop || !ipcRenderer) return;
+        if (!isDesktop || !ipcRenderer || !isActivated) return;
         const interval = setInterval(() => {
             const now = Date.now();
             const stuckThreshold = 5 * 60 * 1000; // 5 minutes
@@ -83,7 +126,7 @@ const App: React.FC = () => {
             });
         }, 60000);
         return () => clearInterval(interval);
-    }, []);
+    }, [isActivated]);
 
     const parseJobs = (data: any[][]): VideoJob[] => {
          return data.map((r,i) => ({
@@ -194,6 +237,18 @@ const App: React.FC = () => {
             setFeedback({ type: 'success', message: 'Đã xóa file và đặt lại Job.' });
         }
     };
+
+    if (checkingActivation) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-white">
+                <LoaderIcon />
+            </div>
+        );
+    }
+
+    if (!isActivated) {
+        return <Activation machineId={machineId} onActivate={handleActivateApp} />;
+    }
 
     return (
         <div className="h-screen overflow-hidden flex flex-col font-sans text-manga-black bg-white">
