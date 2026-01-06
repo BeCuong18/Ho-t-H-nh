@@ -5,6 +5,7 @@ import { TrackedFile, VideoJob } from './types';
 import { MangaProcessor } from './components/Generator';
 import { Tracker } from './components/Tracker';
 import { Activation } from './components/Activation';
+import { AlertModal } from './components/AppModals';
 import { isElectron, getIpcRenderer } from './utils/platform';
 import { LoaderIcon } from './components/Icons';
 
@@ -14,6 +15,10 @@ const App: React.FC = () => {
     const [activeTrackerFileIndex, setActiveTrackerFileIndex] = useState(0);
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success' | 'info', message: string } | null>(null);
     const [ffmpegFound, setFfmpegFound] = useState<boolean | null>(null);
+
+    // Update States
+    const [updateAvailable, setUpdateAvailable] = useState(false);
+    const [updateDownloaded, setUpdateDownloaded] = useState(false);
 
     // Activation State
     const [isActivated, setIsActivated] = useState(false);
@@ -38,7 +43,7 @@ const App: React.FC = () => {
         }
     }, [feedback]);
 
-    // Check Activation on Mount
+    // Check Activation on Mount & Setup Update Listeners
     useEffect(() => {
         const check = async () => {
             if (isDesktop && ipcRenderer) {
@@ -50,6 +55,24 @@ const App: React.FC = () => {
                     // Check if activated
                     const statusRes = await ipcRenderer.invoke('check-activation');
                     setIsActivated(statusRes.activated);
+
+                    // Listen for updates
+                    ipcRenderer.on('update-message', (_: any, data: any) => {
+                        console.log('Update msg:', data);
+                        if (data.type === 'checking') {
+                            setFeedback({ type: 'info', message: 'Đang kiểm tra bản cập nhật...' });
+                        } else if (data.type === 'available') {
+                            setFeedback({ type: 'success', message: 'Đang tải bản cập nhật mới...' });
+                            setUpdateAvailable(true);
+                        } else if (data.type === 'not-available') {
+                            // Optional: only show if manually checked, but here we just ignore or show brief info
+                        } else if (data.type === 'downloaded') {
+                            setUpdateDownloaded(true);
+                        } else if (data.type === 'error') {
+                            setFeedback({ type: 'error', message: 'Lỗi cập nhật: ' + data.message });
+                        }
+                    });
+
                 } catch (e) {
                     console.error("Activation check failed", e);
                 }
@@ -259,6 +282,8 @@ const App: React.FC = () => {
         }
     };
 
+    // --- RENDER ---
+
     if (checkingActivation) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-white">
@@ -360,6 +385,19 @@ const App: React.FC = () => {
                     <span className="text-2xl">{feedback.type === 'error' ? '💢' : '💬'}</span>
                     <span>{feedback.message}</span>
                 </div>
+            )}
+            
+            {/* Update Modal */}
+            {updateDownloaded && (
+                <AlertModal 
+                    title="CẬP NHẬT MỚI" 
+                    message="Phiên bản mới đã được tải xuống. Khởi động lại ứng dụng để áp dụng thay đổi?" 
+                    type="update"
+                    onClose={() => setUpdateDownloaded(false)} // Cho phép đóng nếu chưa muốn update ngay
+                    onConfirm={() => {
+                        if(isDesktop && ipcRenderer) ipcRenderer.invoke('restart-app-update');
+                    }}
+                />
             )}
         </div>
     );

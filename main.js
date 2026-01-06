@@ -11,6 +11,7 @@ const crypto = require('crypto'); // Ensure crypto is required
 // Configure logging for autoUpdater
 autoUpdater.logger = require('electron-log');
 autoUpdater.logger.transports.file.level = 'info';
+autoUpdater.autoDownload = true; // Tự động tải về khi có update
 
 const fileWatchers = new Map();
 const folderWatchers = new Map(); // Theo dõi thư mục ảnh
@@ -248,7 +249,8 @@ function createApplicationMenu() {
                     }
                 },
                 { type: 'separator' },
-                { label: 'Phiên bản: 1.0.0', enabled: false },
+                { label: 'Phiên bản: ' + app.getVersion(), enabled: false },
+                { label: 'Kiểm tra cập nhật', click: () => autoUpdater.checkForUpdatesAndNotify() },
                 { label: 'Tác giả: V-Manga Team', enabled: false }
             ]
         }
@@ -256,6 +258,43 @@ function createApplicationMenu() {
 
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+}
+
+// --- XỬ LÝ AUTO UPDATER ---
+function setupAutoUpdater() {
+    if (!app.isPackaged) return; // Không chạy trong mode dev
+
+    // Gửi tin nhắn xuống renderer
+    const sendStatusToWindow = (text, type = 'info', data = null) => {
+        if (mainWindow) {
+            mainWindow.webContents.send('update-message', { message: text, type, data });
+        }
+    };
+
+    autoUpdater.on('checking-for-update', () => {
+        sendStatusToWindow('Đang kiểm tra bản cập nhật...', 'checking');
+    });
+    autoUpdater.on('update-available', (info) => {
+        sendStatusToWindow('Phát hiện bản cập nhật mới. Đang tải xuống...', 'available');
+    });
+    autoUpdater.on('update-not-available', (info) => {
+        sendStatusToWindow('Bạn đang sử dụng phiên bản mới nhất.', 'not-available');
+    });
+    autoUpdater.on('error', (err) => {
+        sendStatusToWindow('Lỗi cập nhật: ' + err, 'error');
+    });
+    autoUpdater.on('download-progress', (progressObj) => {
+        let log_message = "Tốc độ: " + progressObj.bytesPerSecond;
+        log_message = log_message + ' - Đã tải ' + progressObj.percent + '%';
+        log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+        sendStatusToWindow(log_message, 'progress', progressObj);
+    });
+    autoUpdater.on('update-downloaded', (info) => {
+        sendStatusToWindow('Bản cập nhật đã sẵn sàng cài đặt.', 'downloaded', info);
+    });
+
+    // Check ngay khi app ready
+    autoUpdater.checkForUpdatesAndNotify();
 }
 
 function createWindow() {
@@ -266,11 +305,10 @@ function createWindow() {
     backgroundColor: '#ffffff'
   });
   
-  // Thiết lập menu thay vì xóa nó
   createApplicationMenu();
+  setupAutoUpdater(); // Kích hoạt auto updater
   
   mainWindow.loadFile(app.isPackaged ? path.join(__dirname, 'dist', 'index.html') : 'index.html');
-  // mainWindow.removeMenu(); // Đã xóa dòng này để hiện menu
 }
 
 app.whenReady().then(() => {
@@ -280,6 +318,7 @@ app.whenReady().then(() => {
 // IPC Handlers
 ipcMain.handle('get-app-config', () => readConfig());
 ipcMain.handle('save-app-config', async (e, cfg) => { writeConfig({ ...readConfig(), ...cfg }); return { success: true }; });
+ipcMain.handle('restart-app-update', () => { autoUpdater.quitAndInstall(); }); // Handler khởi động lại để update
 
 // --- ACTIVATION IPC HANDLERS ---
 ipcMain.handle('get-machine-id', () => {
