@@ -1,7 +1,6 @@
-
 {
   "name": "v-manga",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Ứng dụng tự động hóa quy trình sản xuất truyện tranh và hình ảnh minh họa bằng AI.",
   "main": "main.js",
   "homepage": "./",
@@ -14,6 +13,10 @@
   },
   "author": "V-Manga Team",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BeCuong18/V-Manga"
+  },
   "dependencies": {
     "@google/genai": "^1.30.0",
     "react": "^19.2.0",
@@ -40,7 +43,7 @@
       {
         "provider": "github",
         "owner": "BeCuong18",
-        "repo": " "
+        "repo": "V-Manga"
       }
     ],
     "files": [
