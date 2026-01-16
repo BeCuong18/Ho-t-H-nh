@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { TrackedFile, VideoJob, JobStatus } from '../types';
-import { PlayIcon, FolderIcon, TrashIcon, RetryIcon, UploadIcon, CogIcon, ExternalLinkIcon, CheckIcon, CopyIcon } from './Icons';
+import { PlayIcon, FolderIcon, TrashIcon, RetryIcon, UploadIcon, CogIcon, ExternalLinkIcon, CheckIcon, CopyIcon, VideoIcon } from './Icons';
 import { isElectron } from '../utils/platform';
 
 interface TrackerProps {
@@ -44,13 +43,24 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
     };
 
     // Helper to format local file paths for img src
-    const getLocalFileUrl = (filePath: string | undefined) => {
+    const getLocalFileUrl = (filePath: string | undefined, timestamp?: number) => {
         if (!filePath) return '';
         if (!isDesktop) return '';
-        // Chuẩn hóa dấu gạch chéo ngược thành xuôi cho URL
+        
+        // 1. Chuẩn hóa dấu gạch chéo ngược thành xuôi
         const normalized = filePath.replace(/\\/g, '/');
-        // Encode URI để xử lý dấu cách và ký tự đặc biệt, thêm file:/// để hỗ trợ Windows drive absolute paths
-        return `file:///${encodeURI(normalized)}`;
+        
+        // 2. Encode URI để xử lý dấu cách và ký tự đặc biệt (giữ nguyên dấu : và /)
+        const encodedPath = encodeURI(normalized);
+
+        // 3. Thêm timestamp để tránh cache (browser sẽ tải lại ảnh nếu timestamp thay đổi)
+        // Dùng timestamp từ job update hoặc thời gian hiện tại
+        return `file:///${encodedPath}?v=${timestamp || Date.now()}`;
+    };
+
+    const isVideoFile = (path?: string) => {
+        if (!path) return false;
+        return /\.(mp4|mov|avi|mkv|webm)$/i.test(path);
     };
 
     const renderRefImages = (job: VideoJob) => {
@@ -70,6 +80,7 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
                                 src={getLocalFileUrl(img)} 
                                 className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all"
                                 alt="ref"
+                                onError={(e) => { e.currentTarget.style.opacity = '0.2'; }}
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-[8px] bg-gray-300 text-black font-bold cursor-help" title={img}>IMG</div>
@@ -227,13 +238,32 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
                                             <div className="flex flex-col items-center gap-1 group">
                                                 <div className="w-24 h-24 border-2 border-black p-1 bg-white cursor-pointer relative" onClick={() => props.onPlayVideo(job.videoPath!)}>
                                                     {isDesktop ? (
-                                                        <img 
-                                                            src={getLocalFileUrl(job.videoPath)}
-                                                            className="w-full h-full object-contain" 
-                                                            onError={(e) => {
-                                                                (e.target as HTMLImageElement).style.display = 'none';
-                                                            }}
-                                                        />
+                                                        isVideoFile(job.videoPath) ? (
+                                                            <div className="w-full h-full relative group">
+                                                                <video 
+                                                                    src={getLocalFileUrl(job.videoPath, job.lastUpdated)}
+                                                                    className="w-full h-full object-cover bg-black"
+                                                                    muted
+                                                                    loop
+                                                                    onMouseOver={e => e.currentTarget.play()}
+                                                                    onMouseOut={e => e.currentTarget.pause()}
+                                                                />
+                                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:hidden bg-black/20">
+                                                                    <VideoIcon className="w-8 h-8 text-white drop-shadow-md" />
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <img 
+                                                                src={getLocalFileUrl(job.videoPath, job.lastUpdated)}
+                                                                className="w-full h-full object-contain bg-gray-50" 
+                                                                alt="Kết quả"
+                                                                onError={(e) => {
+                                                                    console.warn("Lỗi tải ảnh:", job.videoPath);
+                                                                    e.currentTarget.style.border = '2px solid red';
+                                                                    e.currentTarget.style.opacity = '0.5';
+                                                                }}
+                                                            />
+                                                        )
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-[10px] text-gray-500 font-bold p-1 break-all text-center">FILE OK</div>
                                                     )}
@@ -253,12 +283,12 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
                                                      <button 
                                                         onClick={() => props.onPlayVideo(job.videoPath!)} 
                                                         className="p-2 border border-black bg-white hover:bg-black hover:text-white transition"
-                                                        title="Mở Ảnh"
+                                                        title="Mở File"
                                                     >
                                                         <ExternalLinkIcon className="w-4 h-4"/>
                                                     </button>
                                                     <button 
-                                                        onClick={() => { if(confirm('Xóa ảnh kết quả và đặt lại trạng thái?')) props.onDeleteVideo(job.id, job.videoPath!, activeFileIndex); }} 
+                                                        onClick={() => { if(confirm('Xóa file kết quả và đặt lại trạng thái?')) props.onDeleteVideo(job.id, job.videoPath!, activeFileIndex); }} 
                                                         className="p-2 border border-black bg-white hover:bg-red-600 hover:text-white transition"
                                                         title="Xóa & Làm lại"
                                                     >

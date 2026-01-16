@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { UploadIcon, FolderIcon, CheckIcon, LoaderIcon, CopyIcon } from './Icons';
+import { UploadIcon, FolderIcon, CheckIcon, LoaderIcon, CopyIcon, VideoIcon } from './Icons';
 import { isElectron, getIpcRenderer } from '../utils/platform';
 
 interface MangaProcessorProps {
@@ -126,7 +126,7 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
         }
     };
 
-    const processFile = async () => {
+    const processFile = async (mode: 'image' | 'video') => {
         if (!charFiles.length || !previewData.length) {
             onFeedback({ type: 'error', message: 'Vui lòng chọn đủ thư mục ảnh và file Excel đầu vào.' });
             return;
@@ -142,6 +142,8 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                 const description = row['Description'] || '';
                 const stt = row['stt'] || (index + 1);
                 
+                let hasRefImages = false;
+
                 const job: any = {
                     JOB_ID: `Job_${stt}`,
                     PROMPT: description,
@@ -156,8 +158,8 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                     IMAGE_PATH_9: '',
                     IMAGE_PATH_10: '',
                     STATUS: '', // Empty status as requested
-                    VIDEO_NAME: `${baseOutputName}_${stt}`, // Vẫn giữ tên cột là VIDEO_NAME cho hệ thống, nhưng giá trị là tên ảnh (VD: Manga_1)
-                    TYPE_VIDEO: 'IMG'
+                    VIDEO_NAME: `${baseOutputName}_${stt}`, 
+                    TYPE_VIDEO: 'IMG' // Default, will change below
                 };
 
                 if (charsStr && typeof charsStr === 'string' && charsStr.trim() !== '') {
@@ -171,11 +173,25 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                         });
 
                         if (found) {
+                            hasRefImages = true;
                             const key = i === 0 ? 'IMAGE_PATH' : `IMAGE_PATH_${i + 1}`;
                             job[key] = found.fullPath;
                         }
                     });
                 }
+
+                // Logic Type Video
+                if (mode === 'image') {
+                    job.TYPE_VIDEO = 'IMG';
+                } else {
+                    // Mode Video
+                    if (hasRefImages) {
+                        job.TYPE_VIDEO = 'IN2V';
+                    } else {
+                        job.TYPE_VIDEO = ''; // "không ghi gì" với các job không có ảnh
+                    }
+                }
+
                 return job;
             });
 
@@ -198,12 +214,12 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                 let fullPath = '';
                 if (outputFolderPath) {
                     const sep = navigator.userAgent.includes("Windows") ? '\\' : '/';
+                    const suffix = mode === 'video' ? '_Video' : ''; // Optional: Add suffix to file name? No, keeping user filename
                     fullPath = `${outputFolderPath}${sep}${fileName}`;
                 } else {
-                    fullPath = fileName; // Fallback, though user should select folder
+                    fullPath = fileName; 
                 }
 
-                // If folder is selected, save directly. If not, ask dialog.
                 if (outputFolderPath) {
                      const saveRes = await ipcRenderer.invoke('save-file-custom', { path: fullPath, content: outBuffer });
                      if (saveRes.success) {
@@ -241,7 +257,7 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
             prompt: j.PROMPT,
             status: '', // Empty initially
             videoName: j.VIDEO_NAME,
-            typeVideo: 'IMG',
+            typeVideo: j.TYPE_VIDEO, // Use generated type
             imagePath: j.IMAGE_PATH || '',
             imagePath2: j.IMAGE_PATH_2 || '',
             imagePath3: j.IMAGE_PATH_3 || '',
@@ -304,7 +320,7 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                     {/* Output Configuration */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t-2 border-dashed border-gray-300">
                         <div className="flex flex-col gap-2">
-                            <label className="font-bold uppercase tracking-wider text-sm">3. Tên Ảnh Kết Quả</label>
+                            <label className="font-bold uppercase tracking-wider text-sm">3. Tên File Kết Quả</label>
                             <input 
                                 type="text" 
                                 value={outputFileName}
@@ -312,7 +328,7 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                                 className="border-2 border-black p-3 font-bold"
                                 placeholder="VD: Manga_Tap1"
                             />
-                            <span className="text-[10px] text-gray-500 italic">* Ảnh sẽ được đặt tên: {outputFileName.replace(/\.xlsx$/i, '')}_1.png, {outputFileName.replace(/\.xlsx$/i, '')}_2.png...</span>
+                            <span className="text-[10px] text-gray-500 italic">* File sẽ đặt tên: {outputFileName.replace(/\.xlsx$/i, '')}_{1}.png/mp4...</span>
                         </div>
                         <div className="flex flex-col gap-2">
                             <label className="font-bold uppercase tracking-wider text-sm">4. Thư mục lưu kết quả</label>
@@ -357,13 +373,34 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                  </div>
             </div>
 
-            <div className="flex justify-center">
+            {/* Action Buttons */}
+            <div className="flex flex-col md:flex-row justify-center gap-6">
+                 {/* Button Create Image */}
                  <button 
-                    onClick={processFile}
+                    onClick={() => processFile('image')}
                     disabled={isProcessing || !charFiles.length || !previewData.length}
-                    className="bg-manga-accent text-white font-comic text-2xl px-12 py-4 border-4 border-black shadow-comic hover:shadow-comic-hover hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+                    className="flex-1 bg-white text-black font-comic text-xl px-8 py-4 border-4 border-black shadow-comic hover:shadow-comic-hover hover:bg-manga-gray transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                  >
-                    {isProcessing ? <LoaderIcon /> : 'XỬ LÝ & TẠO JOB'}
+                    {isProcessing ? <LoaderIcon /> : (
+                        <>
+                            <UploadIcon className="w-6 h-6"/>
+                            <span>TẠO ẢNH (IMG)</span>
+                        </>
+                    )}
+                 </button>
+
+                 {/* Button Create Video */}
+                 <button 
+                    onClick={() => processFile('video')}
+                    disabled={isProcessing || !charFiles.length || !previewData.length}
+                    className="flex-1 bg-manga-accent text-white font-comic text-xl px-8 py-4 border-4 border-black shadow-comic hover:shadow-comic-hover hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                 >
+                    {isProcessing ? <LoaderIcon /> : (
+                        <>
+                            <VideoIcon className="w-6 h-6"/>
+                            <span>TẠO VIDEO</span>
+                        </>
+                    )}
                  </button>
             </div>
         </div>

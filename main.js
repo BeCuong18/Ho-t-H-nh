@@ -1,4 +1,3 @@
-
 // main.js
 const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron');
 const path = require('path');
@@ -120,14 +119,14 @@ function scanVideosInternal(jobs, excelFilePath) {
         // Nếu đã có đường dẫn và file tồn tại, giữ nguyên để tối ưu
         if (job.videoPath && fs.existsSync(job.videoPath)) return job;
         
-        // Logic tìm file theo yêu cầu: Image_Job_1_Manga_Output_1.png
-        // Pattern: Image_{JOB_ID}_{VIDEO_NAME}
+        // Pattern: Image_{JOB_ID}_{VIDEO_NAME} hoặc Video_{JOB_ID}_{VIDEO_NAME}
         if (job.id && job.videoName) {
-            const specificPattern = `Image_${job.id}_${job.videoName}`.toLowerCase();
+            const specificImgPattern = `Image_${job.id}_${job.videoName}`.toLowerCase();
+            const specificVidPattern = `Video_${job.id}_${job.videoName}`.toLowerCase();
             
             const specificMatch = resultFiles.find(f => {
                 const nameNoExt = path.parse(f).name.toLowerCase();
-                return nameNoExt === specificPattern;
+                return nameNoExt === specificImgPattern || nameNoExt === specificVidPattern;
             });
 
             if (specificMatch) {
@@ -186,7 +185,7 @@ function parseExcelData(data) {
                 imagePath10: get('IMAGE_PATH_10') || '',
                 status: ['Pending', 'Processing', 'Generating', 'Completed', 'Failed'].includes(statusStr) ? statusStr : '',
                 videoName: get('VIDEO_NAME') || '',
-                typeVideo: get('TYPE_VIDEO') || 'IMG',
+                typeVideo: get('TYPE_VIDEO') || '',
                 videoPath: get('VIDEO_PATH') || undefined,
             };
         }).filter(job => job.id);
