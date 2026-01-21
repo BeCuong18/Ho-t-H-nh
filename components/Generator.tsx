@@ -13,7 +13,6 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
     const [charFolderPath, setCharFolderPath] = useState('');
     const [inputExcelPath, setInputExcelPath] = useState('');
     const [outputFileName, setOutputFileName] = useState('Manga_Output');
-    const [outputFolderPath, setOutputFolderPath] = useState('');
     const [charFiles, setCharFiles] = useState<{name: string, fullPath: string}[]>([]); 
     const [isProcessing, setIsProcessing] = useState(false);
     const [previewData, setPreviewData] = useState<any[]>([]);
