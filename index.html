@@ -17,14 +17,7 @@
                 'manga-gray': '#e5e5e5',
                 'manga-paper': '#ffffff',
                 'manga-ink': '#000000',
-                'manga-accent': '#FF0055',
-                'tet-cream': '#FFFDF5',
-                'tet-red': '#D50000',
-                'tet-red-dark': '#8E0000',
-                'tet-gold': '#FFD600',
-                'tet-brown': '#3E2723',
-                'tet-green': '#1B5E20',
-                'tet-blue': '#0D47A1',
+                'manga-accent': '#FF0055', /* Một chút màu nhấn (hồng/đỏ) thường thấy trong bìa manga */
               },
               backgroundImage: {
                 'halftone': 'radial-gradient(circle, #2d2d2d 1px, transparent 1px)',
@@ -55,12 +48,16 @@
             background-image: radial-gradient(#e5e5e5 1px, transparent 1px);
             background-size: 20px 20px;
         }
+
+        /* Manga Panel Style */
         .manga-panel {
             background: #ffffff;
             border: 3px solid #000000;
             box-shadow: 6px 6px 0px #1a1a1a;
             border-radius: 4px;
         }
+
+        /* Speed Lines Animation */
         .speed-lines {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -76,6 +73,8 @@
             pointer-events: none;
             z-index: 0;
         }
+
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 10px; height: 10px; }
         ::-webkit-scrollbar-track { background: #f0f0f0; border-left: 2px solid #000; }
         ::-webkit-scrollbar-thumb { 
@@ -83,6 +82,8 @@
             border: 2px solid #fff;
         }
         ::-webkit-scrollbar-thumb:hover { background: #FF0055; }
+
+        /* Inputs */
         select, input, textarea {
             background-color: #fff !important;
             border: 2px solid #000 !important; 
@@ -98,6 +99,8 @@
             box-shadow: 4px 4px 0px #000;
             transform: translate(-1px, -1px);
         }
+
+        .comic-font { font-family: 'Coiny', cursive; letter-spacing: 1px; }
     </style>
 <script type="importmap">
 {
@@ -109,8 +112,7 @@
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "vite": "https://esm.sh/vite@^7.3.0",
-    "xlsx": "https://esm.sh/xlsx@^0.18.5",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0"
+    "xlsx": "https://esm.sh/xlsx@^0.18.5"
   }
 }
 </script>
@@ -118,6 +120,6 @@
 <body>
     <div class="speed-lines"></div>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

@@ -1,11 +1,37 @@
 
-export type VideoType = 'story' | 'in2v' | 'IMG'; 
-export type ActiveTab = 'generator' | 'tracker'; 
+export type MvGenre = 'narrative'; // Giữ lại cho tương thích code cũ nếu cần, nhưng không dùng
+export type VideoType = 'story' | 'in2v' | 'IMG'; // Thêm IMG
+export type ActiveTab = 'generator' | 'tracker'; // Bỏ api-manager
 export type JobStatus = '' | 'Pending' | 'Processing' | 'Generating' | 'Completed' | 'Failed';
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  value: string;
+}
+
+export interface Scene {
+  scene_number: number;
+  scene_title: string;
+  prompt_text: string;
+}
+
+export interface UploadedImage {
+  base64: string;
+  mimeType: string;
+  name: string;
+  path?: string;
+}
+
+// Giữ FormData để tránh lỗi build ở các component cũ chưa xóa hết, nhưng thực tế ít dùng
+export interface FormData {
+  projectName: string;
+}
 
 export interface VideoJob {
     id: string;
     prompt: string;
+    // Hỗ trợ tối đa 10 ảnh tham chiếu
     imagePath: string;
     imagePath2: string;
     imagePath3: string;
@@ -21,7 +47,7 @@ export interface VideoJob {
     videoName: string;
     typeVideo: string;
     videoPath?: string;
-    lastUpdated?: number;
+    lastUpdated?: number; // Timestamp for stuck detection
 }
   
 export interface TrackedFile {
@@ -32,31 +58,22 @@ export interface TrackedFile {
 }
 
 export interface AppConfig {
-  machineId: string;
-  licenseKey?: string; 
-  isActivated: boolean;
+  machineId?: string;
+  licenseKey?: string; // Đã thêm
+  lastFolder?: string;
+  toolFlowPath?: string;
+}
+
+export interface DailyStats {
+    date: string;
+    count: number;
 }
 
 export interface StatsData {
-  machineId: string;
-  total: number;
-  promptCount: number;
-  totalCredits: number;
-  history: { date: string; count: number }[];
-  // Added to track model usage quotas per API key
-  modelUsage?: Record<string, Record<string, number>>;
-}
-
-// Added missing Scene interface for Results component
-export interface Scene {
-  scene_number: number;
-  scene_title: string;
-  prompt_text: string;
-}
-
-// Added missing ApiKey interface for ApiKeyManager component
-export interface ApiKey {
-  id: string;
-  name: string;
-  value: string;
+    machineId: string;
+    history: DailyStats[];
+    total: number;
+    promptCount?: number;
+    totalCredits?: number;
+    modelUsage?: Record<string, Record<string, number>>;
 }

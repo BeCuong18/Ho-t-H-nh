@@ -1,95 +1,317 @@
-
 import React, { useState } from 'react';
-import { Scene } from '../types';
-import { CopyIcon, CheckIcon } from './Icons';
+import { TrackedFile, VideoJob, JobStatus } from '../types';
+import { PlayIcon, FolderIcon, TrashIcon, RetryIcon, UploadIcon, CogIcon, ExternalLinkIcon, CheckIcon, CopyIcon, VideoIcon } from './Icons';
+import { isElectron } from '../utils/platform';
 
-interface SceneCardProps {
-  scene: Scene;
+interface TrackerProps {
+    trackedFiles: TrackedFile[];
+    activeFileIndex: number;
+    setActiveFileIndex: (index: number) => void;
+    onOpenFile: () => void;
+    onCloseFile: (index: number) => void;
+    stats: any; 
+    ffmpegFound: boolean | null;
+    isCombining: boolean;
+    onPlayVideo: (path: string) => void;
+    onShowFolder: (path: string) => void;
+    onOpenToolFlows: () => void;
+    onSetToolFlowPath: () => void;
+    onReloadVideos: () => void;
+    onRetryStuck: () => void; // Used for "Reset All Incomplete"
+    onRetryJob: (id: string, fileIdx: number) => void; // Regenerate single
+    onDeleteVideo: (id: string, path: string, fileIdx: number) => void; // Delete single
+    onCombine: (mode: 'normal' | 'timed') => void;
+    onCombineAll: () => void;
+    onLinkVideo: (id: string, fileIdx: number) => void;
 }
 
-const SceneCard: React.FC<SceneCardProps> = ({ scene }) => {
-  const [copied, setCopied] = useState(false);
+export const Tracker: React.FC<TrackerProps> = (props) => {
+    const { trackedFiles, activeFileIndex, setActiveFileIndex } = props;
+    const currentFile = trackedFiles[activeFileIndex];
+    const isDesktop = isElectron();
+    const [pathCopied, setPathCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(scene.prompt_text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    const getStatusStyle = (status: JobStatus) => {
+        if (!status) return "bg-gray-100 text-gray-400 border-gray-200"; // Empty status
+        switch (status) {
+            case 'Completed': return "bg-black text-white border-black";
+            case 'Processing': return "bg-yellow-100 text-yellow-800 border-yellow-300 animate-pulse";
+            case 'Generating': return "bg-blue-100 text-blue-800 border-blue-300 animate-pulse";
+            case 'Failed': return "bg-red-50 text-red-600 border border-red-200";
+            default: return "bg-white text-gray-500 border border-gray-300";
+        }
+    };
 
-  const formattedText = scene.prompt_text
-    .replace(/(\[SCENE_START\])/g, '<span class="text-tet-red font-black text-base">$1</span>')
-    .replace(/(SCENE_HEADING:|CHARACTER:|CINEMATOGRAPHY:|LIGHTING:|ENVIRONMENT:|ACTION_EMOTION:|STYLE:)/g, 
-      '\n<strong class="text-tet-red-dark bg-tet-gold/10 px-1 border-b-2 border-tet-gold/40">$&</strong>');
-
-  return (
-    <div className="scene-card bg-white rounded-3xl p-6 border-2 border-tet-gold/30 transition-all transform hover:-translate-y-1 hover:shadow-2xl flex flex-col justify-between shadow-md relative overflow-hidden group">
-      <div className="absolute top-0 right-0 w-24 h-24 bg-tet-red/5 -translate-y-12 translate-x-12 rounded-full pointer-events-none group-hover:bg-tet-red/10 transition-colors"></div>
-      
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-5 border-b-2 border-stone-50 pb-3">
-          <h3 className="font-black text-lg text-tet-brown flex items-center gap-3">
-            <span className="bg-tet-red text-white w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0 shadow-sm border-2 border-white">{scene.scene_number}</span>
-            <span className="truncate max-w-[200px] xl:max-w-none">{scene.scene_title}</span>
-          </h3>
-          <button 
-            onClick={handleCopy}
-            className={`p-2.5 rounded-2xl transition-all border-2 shadow-sm ${copied ? 'bg-tet-green text-white border-white scale-110' : 'bg-tet-cream text-tet-brown border-tet-gold/20 hover:border-tet-red hover:bg-white hover:text-tet-red'}`}
-            title="Copy Prompt"
-          >
-            {copied ? <CheckIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
-          </button>
-        </div>
+    // Helper to format local file paths for img src
+    const getLocalFileUrl = (filePath: string | undefined, timestamp?: number) => {
+        if (!filePath) return '';
+        if (!isDesktop) return '';
         
-        <div className="relative">
-            <pre 
-              className="text-tet-brown mt-2 text-xs md:text-sm bg-stone-50 p-5 rounded-2xl font-mono break-words whitespace-pre-wrap border-2 border-stone-100 leading-relaxed shadow-inner max-h-[500px] overflow-y-auto custom-scrollbar"
-              dangerouslySetInnerHTML={{ __html: formattedText }}
-            />
-            {copied && (
-                <div className="absolute top-3 right-3 px-4 py-1.5 bg-tet-green text-white text-[10px] font-extrabold rounded-full animate-fade-in shadow-lg border-2 border-white z-20">
-                    ĐÃ SAO CHÉP
+        // 1. Chuẩn hóa dấu gạch chéo ngược thành xuôi
+        const normalized = filePath.replace(/\\/g, '/');
+        
+        // 2. Encode URI để xử lý dấu cách và ký tự đặc biệt (giữ nguyên dấu : và /)
+        const encodedPath = encodeURI(normalized);
+
+        // 3. Thêm timestamp để tránh cache (browser sẽ tải lại ảnh nếu timestamp thay đổi)
+        // Dùng timestamp từ job update hoặc thời gian hiện tại
+        return `file:///${encodedPath}?v=${timestamp || Date.now()}`;
+    };
+
+    const isVideoFile = (path?: string) => {
+        if (!path) return false;
+        return /\.(mp4|mov|avi|mkv|webm)$/i.test(path);
+    };
+
+    const renderRefImages = (job: VideoJob) => {
+        const images: string[] = [
+            job.imagePath, job.imagePath2, job.imagePath3, job.imagePath4, job.imagePath5,
+            job.imagePath6, job.imagePath7, job.imagePath8, job.imagePath9, job.imagePath10
+        ].filter((img): img is string => !!img);
+
+        if (images.length === 0) return <span className="text-xs text-gray-400 font-mono">NO REF</span>;
+
+        return (
+            <div className="flex flex-wrap gap-1 w-40">
+                {images.map((img, i) => (
+                    <div key={i} className="w-8 h-8 border border-black overflow-hidden bg-gray-200" title={`Ref ${i+1}`}>
+                        {isDesktop ? (
+                            <img 
+                                src={getLocalFileUrl(img)} 
+                                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all"
+                                alt="ref"
+                                onError={(e) => { e.currentTarget.style.opacity = '0.2'; }}
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[8px] bg-gray-300 text-black font-bold cursor-help" title={img}>IMG</div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    const handleToolFlowClick = () => {
+        if (!isDesktop) {
+            alert("Chức năng chạy ToolFlow chỉ khả dụng trên phiên bản Desktop (Windows/Mac).");
+            return;
+        }
+        props.onOpenToolFlows();
+    };
+
+    const handleToolFlowConfigClick = () => {
+        if (!isDesktop) {
+            alert("Cấu hình ToolFlow chỉ khả dụng trên phiên bản Desktop.");
+            return;
+        }
+        props.onSetToolFlowPath();
+    };
+
+    const handleCopyFolderPath = () => {
+        if (currentFile && currentFile.path) {
+            const sep = navigator.userAgent.includes("Windows") ? '\\' : '/';
+            const folderPath = currentFile.path.substring(0, currentFile.path.lastIndexOf(sep));
+            navigator.clipboard.writeText(folderPath);
+            setPathCopied(true);
+            setTimeout(() => setPathCopied(false), 2000);
+        }
+    };
+
+    if (trackedFiles.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-10 border-4 border-dashed border-black bg-white m-4">
+                 <h2 className="text-4xl font-comic mb-4 uppercase">CHƯA CÓ DỰ ÁN</h2>
+                 <p className="font-mono text-sm mb-8">Vui lòng tạo job ở tab Nhập Dữ Liệu hoặc mở file Excel có sẵn.</p>
+                 <button onClick={props.onOpenFile} className="bg-black text-white px-8 py-3 font-bold uppercase shadow-comic hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all border-2 border-black">
+                    Mở Dự Án Cũ
+                 </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex h-[80vh] border-4 border-black bg-white shadow-[10px_10px_0px_rgba(0,0,0,0.2)]">
+            {/* Sidebar */}
+            <div className="w-64 border-r-4 border-black bg-manga-gray flex flex-col">
+                <div className="p-4 border-b-4 border-black bg-white">
+                    <button onClick={props.onOpenFile} className="w-full border-2 border-black py-2 font-bold uppercase hover:bg-black hover:text-white transition flex items-center justify-center gap-2 text-xs">
+                        <UploadIcon className="w-4 h-4" /> Mở Dự Án
+                    </button>
                 </div>
-            )}
+                <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                    {trackedFiles.map((file, idx) => (
+                        <div 
+                            key={idx} 
+                            onClick={() => setActiveFileIndex(idx)} 
+                            className={`p-3 border-2 cursor-pointer transition-all relative ${idx === activeFileIndex ? 'bg-black text-white border-black' : 'bg-white text-black border-black hover:bg-gray-200'}`}
+                        >
+                            <div className="font-bold text-xs truncate uppercase pr-6">{file.name}</div>
+                            <div className="text-[10px] mt-1 font-mono opacity-70">
+                                {file.jobs.filter(j => j.status === 'Completed').length} / {file.jobs.length} XONG
+                            </div>
+                            <button 
+                                onClick={(e) => {e.stopPropagation(); props.onCloseFile(idx);}} 
+                                className="absolute top-1 right-1 hover:text-red-500 font-bold px-2"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col bg-white">
+                {/* Toolbar */}
+                <div className="p-4 border-b-4 border-black flex justify-between items-center bg-white gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                         {/* Stats Pill */}
+                        <div className="border-2 border-black px-4 py-2 bg-manga-gray flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase text-gray-500">Tiến độ</span>
+                            <span className="text-xl font-comic leading-none">
+                                {currentFile.jobs.filter(j => j.status === 'Completed').length} / {currentFile.jobs.length}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {/* Tool Flow Buttons - Always Visible */}
+                        <div className="flex items-center border-2 border-black p-1 gap-1 bg-gray-50">
+                            <button onClick={handleToolFlowClick} className="px-3 py-1 bg-manga-accent text-white hover:bg-red-600 transition font-bold uppercase text-xs flex items-center gap-2">
+                                <PlayIcon className="w-4 h-4"/> Chạy Tool
+                            </button>
+                            <button onClick={handleToolFlowConfigClick} className="px-2 py-1 hover:bg-gray-200 text-black border-l border-gray-300" title="Cấu hình đường dẫn Tool">
+                                <CogIcon className="w-4 h-4"/>
+                            </button>
+                        </div>
+
+                        {/* Desktop Actions */}
+                        {isDesktop && (
+                            <button onClick={props.onRetryStuck} className="border-2 border-black px-4 py-2 hover:bg-yellow-400 hover:text-black transition font-bold uppercase text-xs flex items-center gap-2" title="Đặt lại trạng thái các job chưa hoàn thành">
+                                <RetryIcon className="w-4 h-4"/> Đặt lại tất cả
+                            </button>
+                        )}
+                        
+                        {isDesktop && (
+                            <div className="flex border-2 border-black p-0 bg-white">
+                                 <button onClick={() => props.onShowFolder(currentFile.path!)} className="px-4 py-2 hover:bg-black hover:text-white font-bold uppercase text-xs flex items-center gap-2 border-r border-black">
+                                    <FolderIcon className="w-4 h-4"/> Thư mục
+                                </button>
+                                <button onClick={handleCopyFolderPath} className="px-3 py-2 hover:bg-manga-accent hover:text-white transition" title="Sao chép đường dẫn thư mục">
+                                    {pathCopied ? <CheckIcon className="w-4 h-4"/> : <CopyIcon className="w-4 h-4"/>}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div className="flex-1 overflow-auto bg-gray-50 p-4">
+                    <table className="w-full border-collapse border-2 border-black bg-white text-sm">
+                        <thead className="bg-black text-white">
+                            <tr>
+                                <th className="p-3 border border-gray-600 text-left w-16">ID</th>
+                                <th className="p-3 border border-gray-600 text-left w-24">TRẠNG THÁI</th>
+                                <th className="p-3 border border-gray-600 text-left">NỘI DUNG / MÔ TẢ</th>
+                                <th className="p-3 border border-gray-600 text-left w-40">NHÂN VẬT (REF)</th>
+                                <th className="p-3 border border-gray-600 text-center w-32">KẾT QUẢ</th>
+                                <th className="p-3 border border-gray-600 text-center w-32">THAO TÁC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentFile.jobs.map((job) => (
+                                <tr key={job.id} className="hover:bg-gray-100 font-mono">
+                                    <td className="p-3 border border-black font-bold">{job.id.replace('Job_', '#')}</td>
+                                    <td className="p-3 border border-black">
+                                        <span className={`px-2 py-1 text-[10px] font-bold uppercase border rounded-sm ${getStatusStyle(job.status)} block text-center`}>
+                                            {job.status || 'CHỜ'}
+                                        </span>
+                                    </td>
+                                    <td className="p-3 border border-black text-xs">
+                                        <div className="line-clamp-3" title={job.prompt}>{job.prompt}</div>
+                                    </td>
+                                    <td className="p-3 border border-black">
+                                        {renderRefImages(job)}
+                                    </td>
+                                    <td className="p-3 border border-black text-center">
+                                        {job.status === 'Completed' && job.videoPath ? (
+                                            <div className="flex flex-col items-center gap-1 group">
+                                                <div className="w-24 h-24 border-2 border-black p-1 bg-white cursor-pointer relative" onClick={() => props.onPlayVideo(job.videoPath!)}>
+                                                    {isDesktop ? (
+                                                        isVideoFile(job.videoPath) ? (
+                                                            <div className="w-full h-full relative group">
+                                                                <video 
+                                                                    src={getLocalFileUrl(job.videoPath, job.lastUpdated)}
+                                                                    className="w-full h-full object-cover bg-black"
+                                                                    muted
+                                                                    loop
+                                                                    onMouseOver={e => e.currentTarget.play()}
+                                                                    onMouseOut={e => e.currentTarget.pause()}
+                                                                />
+                                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:hidden bg-black/20">
+                                                                    <VideoIcon className="w-8 h-8 text-white drop-shadow-md" />
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <img 
+                                                                src={getLocalFileUrl(job.videoPath, job.lastUpdated)}
+                                                                className="w-full h-full object-contain bg-gray-50" 
+                                                                alt="Kết quả"
+                                                                onError={(e) => {
+                                                                    console.warn("Lỗi tải ảnh:", job.videoPath);
+                                                                    e.currentTarget.style.border = '2px solid red';
+                                                                    e.currentTarget.style.opacity = '0.5';
+                                                                }}
+                                                            />
+                                                        )
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-[10px] text-gray-500 font-bold p-1 break-all text-center">FILE OK</div>
+                                                    )}
+                                                </div>
+                                                <div className="text-[10px] font-mono max-w-[100px] truncate" title={job.videoName}>
+                                                    {job.videoName}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-300">-</span>
+                                        )}
+                                    </td>
+                                    <td className="p-3 border border-black text-center">
+                                        <div className="flex gap-1 justify-center">
+                                            {job.status === 'Completed' && job.videoPath ? (
+                                                <>
+                                                     <button 
+                                                        onClick={() => props.onPlayVideo(job.videoPath!)} 
+                                                        className="p-2 border border-black bg-white hover:bg-black hover:text-white transition"
+                                                        title="Mở File"
+                                                    >
+                                                        <ExternalLinkIcon className="w-4 h-4"/>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => { if(confirm('Xóa file kết quả và đặt lại trạng thái?')) props.onDeleteVideo(job.id, job.videoPath!, activeFileIndex); }} 
+                                                        className="p-2 border border-black bg-white hover:bg-red-600 hover:text-white transition"
+                                                        title="Xóa & Làm lại"
+                                                    >
+                                                        <TrashIcon className="w-4 h-4"/>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => props.onRetryJob(job.id, activeFileIndex)}
+                                                    className="p-2 border border-black bg-white hover:bg-manga-accent hover:text-white transition"
+                                                    title="Tạo lại / Đặt lại trạng thái"
+                                                >
+                                                    <RetryIcon className="w-4 h-4"/>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
-
-interface ResultsProps {
-  scenes: Scene[];
-  onSaveExcel?: () => void;
-}
-
-const Results: React.FC<ResultsProps> = ({ scenes }) => {
-  if (!scenes || scenes.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="mt-12 animate-fade-in pb-10">
-      {/* Header Container */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-white p-4 md:p-6 rounded-[40px] border-2 border-tet-gold/40 shadow-lg">
-          <div className="flex items-center gap-4 flex-1">
-             <div className="h-0.5 bg-gradient-to-r from-transparent to-tet-gold flex-1 rounded-full hidden lg:block"></div>
-             <div className="flex items-center gap-3 px-2">
-                <span className="text-3xl">🏮</span>
-                <h2 className="text-xl md:text-2xl font-black text-tet-red-dark uppercase tracking-widest whitespace-nowrap text-center w-full lg:w-auto">Kịch Bản Prompt Chi Tiết</h2>
-             </div>
-             <div className="h-0.5 bg-gradient-to-l from-transparent to-tet-gold flex-1 rounded-full hidden lg:block"></div>
-          </div>
-      </div>
-      
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {scenes.map(s => (
-          <SceneCard 
-            key={s.scene_number} 
-            scene={s}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default Results;
