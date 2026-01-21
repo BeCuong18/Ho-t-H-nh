@@ -1,13 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { VideoJob, ActiveTab, TrackedFile, ApiKey, Scene } from './types';
+import { VideoJob, ActiveTab, TrackedFile } from './types';
 import { MangaProcessor } from './components/Generator';
 import { Tracker } from './components/Tracker';
 import { Activation } from './components/Activation';
-import { ApiKeyManagerScreen } from './components/ApiKeyManager';
-import Results from './components/Results';
-// Fix: Added missing CheckIcon to the imports from components/Icons
-import { CogIcon, KeyIcon, CheckIcon } from './components/Icons';
 import { getIpcRenderer } from './utils/platform';
 
 const App: React.FC = () => {
@@ -16,10 +12,6 @@ const App: React.FC = () => {
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [isActivated, setIsActivated] = useState(false);
   const [machineId, setMachineId] = useState('');
-  
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [selectedApiKey, setSelectedApiKey] = useState<ApiKey | null>(null);
-  const [generatedScenes, setGeneratedScenes] = useState<Scene[]>([]);
 
   const ipcRenderer = getIpcRenderer();
 
@@ -30,18 +22,9 @@ const App: React.FC = () => {
 
     const savedKey = localStorage.getItem('v_manga_license');
     if (savedKey) setIsActivated(true);
-
-    // Load API Keys
-    const savedApiKeys = localStorage.getItem('v_manga_api_keys');
-    if (savedApiKeys) {
-        const parsed = JSON.parse(savedApiKeys);
-        setApiKeys(parsed);
-        if (parsed.length > 0) setSelectedApiKey(parsed[0]);
-    }
   }, []);
 
   const handleActivate = async (key: string) => {
-    // Basic verification logic for demo
     if (key.length > 10) {
       localStorage.setItem('v_manga_license', key);
       setIsActivated(true);
@@ -77,30 +60,6 @@ const App: React.FC = () => {
     });
   };
 
-  const handleKeyAdd = (key: ApiKey) => {
-    const newKeys = [...apiKeys, key];
-    setApiKeys(newKeys);
-    localStorage.setItem('v_manga_api_keys', JSON.stringify(newKeys));
-    if (!selectedApiKey) setSelectedApiKey(key);
-  };
-
-  const handleKeyDelete = (id: string) => {
-    const newKeys = apiKeys.filter(k => k.id !== id);
-    setApiKeys(newKeys);
-    localStorage.setItem('v_manga_api_keys', JSON.stringify(newKeys));
-    if (selectedApiKey?.id === id) setSelectedApiKey(newKeys[0] || null);
-  };
-
-  const handleKeySelect = (key: ApiKey) => {
-    setSelectedApiKey(key);
-    setActiveTab('generator');
-  };
-
-  const handleAiScenesGenerated = (scenes: Scene[]) => {
-    setGeneratedScenes(scenes);
-    setActiveTab('results');
-  };
-
   if (!isActivated) {
     return <Activation machineId={machineId} onActivate={handleActivate} />;
   }
@@ -129,30 +88,15 @@ const App: React.FC = () => {
         <div className="flex gap-4 relative z-10">
           <button 
             onClick={() => setActiveTab('generator')}
-            className={`px-4 py-2 border-2 border-black font-bold uppercase transition shadow-comic text-xs md:text-sm ${activeTab === 'generator' ? 'bg-black text-white translate-x-1 translate-y-1 shadow-none' : 'bg-white hover:bg-manga-gray'}`}
+            className={`px-6 py-2 border-2 border-black font-bold uppercase transition shadow-comic text-xs md:text-sm ${activeTab === 'generator' ? 'bg-black text-white translate-x-1 translate-y-1 shadow-none' : 'bg-white hover:bg-manga-gray'}`}
           >
             Nhập Dữ Liệu
           </button>
           <button 
             onClick={() => setActiveTab('tracker')}
-            className={`px-4 py-2 border-2 border-black font-bold uppercase transition shadow-comic text-xs md:text-sm ${activeTab === 'tracker' ? 'bg-black text-white translate-x-1 translate-y-1 shadow-none' : 'bg-white hover:bg-manga-gray'}`}
+            className={`px-6 py-2 border-2 border-black font-bold uppercase transition shadow-comic text-xs md:text-sm ${activeTab === 'tracker' ? 'bg-black text-white translate-x-1 translate-y-1 shadow-none' : 'bg-white hover:bg-manga-gray'}`}
           >
-            Sản Xuất
-          </button>
-          {generatedScenes.length > 0 && (
-             <button 
-                onClick={() => setActiveTab('results')}
-                className={`px-4 py-2 border-2 border-black font-bold uppercase transition shadow-comic text-xs md:text-sm ${activeTab === 'results' ? 'bg-manga-accent text-white translate-x-1 translate-y-1 shadow-none' : 'bg-white hover:bg-manga-gray text-manga-accent'}`}
-             >
-                Kịch Bản AI
-             </button>
-          )}
-          <button 
-            onClick={() => setActiveTab('apikeys')}
-            className={`p-2 border-2 border-black font-bold transition shadow-comic ${activeTab === 'apikeys' ? 'bg-black text-white translate-x-1 translate-y-1 shadow-none' : 'bg-white hover:bg-manga-gray'}`}
-            title="Quản lý API Key"
-          >
-            <KeyIcon className="w-5 h-5" />
+            Theo Dõi Sản Xuất
           </button>
         </div>
       </header>
@@ -163,11 +107,9 @@ const App: React.FC = () => {
              <MangaProcessor 
                 onProcessingComplete={handleProcessingComplete}
                 onFeedback={(f) => console.log(f)}
-                activeApiKey={selectedApiKey?.value}
-                onScenesGenerated={handleAiScenesGenerated}
             />
           </div>
-        ) : activeTab === 'tracker' ? (
+        ) : (
           <div className="animate-fade-in h-full">
             <Tracker 
                 trackedFiles={trackedFiles}
@@ -199,30 +141,12 @@ const App: React.FC = () => {
                 onLinkVideo={() => {}}
             />
           </div>
-        ) : activeTab === 'results' ? (
-            <div className="animate-fade-in h-full overflow-y-auto custom-scrollbar bg-white rounded-3xl p-6 border-4 border-black">
-                <Results scenes={generatedScenes} />
-            </div>
-        ) : (
-            <ApiKeyManagerScreen 
-                apiKeys={apiKeys}
-                onKeyAdd={handleKeyAdd}
-                onKeyDelete={handleKeyDelete}
-                onKeySelect={handleKeySelect}
-            />
         )}
       </main>
       
       <footer className="bg-black text-white text-[10px] py-1 px-4 flex justify-between uppercase font-bold tracking-widest relative z-10">
         <span>V-MANGA ENTERPRISE © 2026</span>
-        <div className="flex gap-4">
-             {selectedApiKey && (
-                 <span className="text-tet-gold flex items-center gap-1">
-                     <CheckIcon className="w-3 h-3"/> API: {selectedApiKey.name}
-                 </span>
-             )}
-             <span className="text-manga-accent">Industrial Production Workflow</span>
-        </div>
+        <span className="text-manga-accent">Standard Workflow Mode</span>
       </footer>
     </div>
   );

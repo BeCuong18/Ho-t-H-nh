@@ -1,31 +1,7 @@
 
-export type MvGenre = 'narrative'; 
 export type VideoType = 'story' | 'in2v' | 'IMG'; 
-export type ActiveTab = 'generator' | 'tracker' | 'results' | 'apikeys'; 
+export type ActiveTab = 'generator' | 'tracker'; 
 export type JobStatus = '' | 'Pending' | 'Processing' | 'Generating' | 'Completed' | 'Failed';
-
-export interface ApiKey {
-  id: string;
-  name: string;
-  value: string;
-}
-
-export interface Scene {
-  scene_number: number;
-  scene_title: string;
-  prompt_text: string;
-}
-
-export interface UploadedImage {
-  base64: string;
-  mimeType: string;
-  name: string;
-  path?: string;
-}
-
-export interface FormData {
-  projectName: string;
-}
 
 export interface VideoJob {
     id: string;
@@ -62,16 +38,31 @@ export interface AppConfig {
   toolFlowPath?: string;
 }
 
-export interface DailyStats {
-    date: string;
-    count: number;
+// Added Scene interface for Results component
+export interface Scene {
+  scene_number: number;
+  scene_title: string;
+  prompt_text: string;
+}
+
+// Added ApiKey interface for ApiKeyManager component
+export interface ApiKey {
+  id: string;
+  name: string;
+  value: string;
+}
+
+// Added Stats interfaces for AppModals component
+export interface StatsHistoryItem {
+  date: string;
+  count: number;
 }
 
 export interface StatsData {
-    machineId: string;
-    history: DailyStats[];
-    total: number;
-    promptCount?: number;
-    totalCredits?: number;
-    modelUsage?: Record<string, Record<string, number>>;
+  machineId: string;
+  total: number;
+  promptCount: number;
+  totalCredits: number;
+  history: StatsHistoryItem[];
+  modelUsage?: Record<string, Record<string, number>>;
 }
