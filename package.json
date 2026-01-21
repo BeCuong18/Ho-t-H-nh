@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish always",
-    "make-icon": "npx png2icons assets/icon.png assets/icon -i"
+    "make-icon": "npx png2icons assets/icon.png assets/icon -allwe -i"
   },
   "author": "V-Manga Team",
   "license": "UNLICENSED",
