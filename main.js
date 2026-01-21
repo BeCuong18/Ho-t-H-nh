@@ -193,14 +193,17 @@ function setupAutoUpdater() {
  * Hàm hỗ trợ lấy đường dẫn Icon chuẩn xác
  */
 function getIconPath() {
-    const isWin = process.platform === 'win32';
-    const ext = isWin ? 'ico' : 'png';
-    const assetsPath = path.join(__dirname, 'assets');
-    let iconPath = path.join(assetsPath, `icon.${ext}`);
+    // Luôn ưu tiên dùng PNG cho icon cửa sổ vì nó nhẹ và tương thích tốt trên mọi OS
+    let iconPath = path.join(__dirname, 'assets', 'icon.png');
     
-    // Nếu không thấy file .ico, thử tìm .png (thường dùng cho Taskbar/Linux)
+    // Nếu app đã đóng gói, assets có thể nằm ở thư mục root của bundle
     if (!fs.existsSync(iconPath)) {
-        iconPath = path.join(assetsPath, 'icon.png');
+        iconPath = path.join(process.resourcesPath, 'app.asar', 'assets', 'icon.png');
+    }
+
+    // Nếu vẫn không thấy, thử tìm .ico (Windows)
+    if (!fs.existsSync(iconPath)) {
+        iconPath = path.join(__dirname, 'assets', 'icon.ico');
     }
     
     return iconPath;
