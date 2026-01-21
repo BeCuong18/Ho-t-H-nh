@@ -185,10 +185,15 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
                             </button>
                         </div>
 
+                        {/* Reload Button */}
+                        <button onClick={props.onReloadVideos} className="border-2 border-black px-4 py-2 hover:bg-black hover:text-white transition font-bold uppercase text-xs flex items-center gap-2" title="Làm mới danh sách kết quả">
+                            <RetryIcon className="w-4 h-4"/> Làm mới
+                        </button>
+
                         {/* Desktop Actions */}
                         {isDesktop && (
                             <button onClick={props.onRetryStuck} className="border-2 border-black px-4 py-2 hover:bg-yellow-400 hover:text-black transition font-bold uppercase text-xs flex items-center gap-2" title="Đặt lại trạng thái các job chưa hoàn thành">
-                                <RetryIcon className="w-4 h-4"/> Đặt lại tất cả
+                                <RetryIcon className="w-4 h-4"/> Reset
                             </button>
                         )}
                         
@@ -283,9 +288,16 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
                                                      <button 
                                                         onClick={() => props.onPlayVideo(job.videoPath!)} 
                                                         className="p-2 border border-black bg-white hover:bg-black hover:text-white transition"
-                                                        title="Mở File"
+                                                        title="Xem File"
                                                     >
                                                         <ExternalLinkIcon className="w-4 h-4"/>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => props.onShowFolder(job.videoPath!)} 
+                                                        className="p-2 border border-black bg-white hover:bg-black hover:text-white transition"
+                                                        title="Mở thư mục chứa file"
+                                                    >
+                                                        <FolderIcon className="w-4 h-4"/>
                                                     </button>
                                                     <button 
                                                         onClick={() => { if(confirm('Xóa file kết quả và đặt lại trạng thái?')) props.onDeleteVideo(job.id, job.videoPath!, activeFileIndex); }} 

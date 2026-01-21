@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { UploadIcon, FolderIcon, CheckIcon, LoaderIcon, CopyIcon, VideoIcon } from './Icons';
@@ -43,13 +44,6 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
         if (isDesktop && ipcRenderer) {
             const res = await ipcRenderer.invoke('open-folder-dialog');
             if (res.success) setOutputFolderPath(res.path);
-        }
-    };
-
-    const handleCopyOutputFolder = () => {
-        if (outputFolderPath) {
-            navigator.clipboard.writeText(outputFolderPath);
-            onFeedback({ type: 'success', message: 'Đã sao chép đường dẫn lưu!' });
         }
     };
 
@@ -117,7 +111,6 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
         try {
             const baseOutputName = outputFileName.replace(/\.xlsx$/i, '');
             
-            // Định nghĩa Header cho AoA với các cột đánh số IMAGE_PATH, IMAGE_PATH_2...
             const excelHeader = [
                 "JOB_ID", "PROMPT", 
                 "IMAGE_PATH", "IMAGE_PATH_2", "IMAGE_PATH_3", "IMAGE_PATH_4", "IMAGE_PATH_5",
@@ -138,7 +131,6 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                 const foundPaths: string[] = Array(10).fill('');
 
                 if (charsStr && typeof charsStr === 'string' && charsStr.trim() !== '') {
-                    // Tách nhân vật và lọc trùng
                     const charNames = Array.from(new Set(charsStr.split(/[,;]/).map(c => c.trim()).filter(c => c)));
                     
                     for (const charName of charNames) {
@@ -151,7 +143,6 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                         });
 
                         if (found) {
-                            // Điền tuần tự: Nếu tìm thấy ảnh, điền vào vị trí trống tiếp theo trong mảng 10 phần tử
                             foundPaths[foundImagesCount] = found.fullPath;
                             foundImagesCount++;
                             hasRefImages = true;
@@ -169,18 +160,16 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                 const jobId = `Job_${stt}`;
                 const videoName = `${baseOutputName}_${stt}`;
 
-                // Hàng dữ liệu cho Excel (Khớp với Header 15 cột)
                 const excelRow = [
                     jobId,
                     description,
                     ...foundPaths,
-                    '', // STATUS cột 12 (index 12)
+                    '', 
                     videoName,
                     typeVideo
                 ];
                 excelRows.push(excelRow);
 
-                // Lưu job nội bộ cho App
                 internalJobs.push({
                     id: jobId,
                     prompt: description,
@@ -245,7 +234,7 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 p-4">
-            <input type="file" ref={folderInputRef} style={{display: 'none'}} webkitdirectory="" directory="" multiple onChange={handleWebFolderChange} />
+            <input type="file" ref={folderInputRef} style={{display: 'none'}} {...({ webkitdirectory: '', directory: '' } as any)} multiple onChange={handleWebFolderChange} />
             <input type="file" ref={fileInputRef} style={{display: 'none'}} accept=".xlsx, .xls" onChange={handleWebExcelChange} />
 
             <div className="manga-panel p-8 bg-white relative">
@@ -283,6 +272,7 @@ export const MangaProcessor: React.FC<MangaProcessorProps> = ({ onProcessingComp
                             <label className="font-bold uppercase tracking-wider text-sm">3. Tên File Kết Quả</label>
                             <input type="text" value={outputFileName} onChange={(e) => setOutputFileName(e.target.value)} className="border-2 border-black p-3 font-bold" />
                         </div>
+                        
                         <div className="flex flex-col gap-2">
                             <label className="font-bold uppercase tracking-wider text-sm">4. Thư mục lưu kết quả</label>
                             <div className="flex gap-2">

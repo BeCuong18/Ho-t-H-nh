@@ -1,7 +1,7 @@
 
-export type MvGenre = 'narrative'; // Giữ lại cho tương thích code cũ nếu cần, nhưng không dùng
-export type VideoType = 'story' | 'in2v' | 'IMG'; // Thêm IMG
-export type ActiveTab = 'generator' | 'tracker'; // Bỏ api-manager
+export type MvGenre = 'narrative'; 
+export type VideoType = 'story' | 'in2v' | 'IMG'; 
+export type ActiveTab = 'generator' | 'tracker'; 
 export type JobStatus = '' | 'Pending' | 'Processing' | 'Generating' | 'Completed' | 'Failed';
 
 export interface ApiKey {
@@ -23,7 +23,6 @@ export interface UploadedImage {
   path?: string;
 }
 
-// Giữ FormData để tránh lỗi build ở các component cũ chưa xóa hết, nhưng thực tế ít dùng
 export interface FormData {
   projectName: string;
 }
@@ -31,7 +30,6 @@ export interface FormData {
 export interface VideoJob {
     id: string;
     prompt: string;
-    // Hỗ trợ tối đa 10 ảnh tham chiếu
     imagePath: string;
     imagePath2: string;
     imagePath3: string;
@@ -47,7 +45,7 @@ export interface VideoJob {
     videoName: string;
     typeVideo: string;
     videoPath?: string;
-    lastUpdated?: number; // Timestamp for stuck detection
+    lastUpdated?: number;
 }
   
 export interface TrackedFile {
@@ -59,7 +57,7 @@ export interface TrackedFile {
 
 export interface AppConfig {
   machineId?: string;
-  licenseKey?: string; // Đã thêm
+  licenseKey?: string; 
   lastFolder?: string;
   toolFlowPath?: string;
 }
