@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { TrackedFile, VideoJob } from './types';
@@ -228,6 +229,16 @@ const App: React.FC = () => {
         }
     };
 
+    const handleReloadVideos = () => {
+        if (isDesktop && ipcRenderer) {
+            const currentFile = trackedFiles[activeTrackerFileIndex];
+            if (currentFile && currentFile.path) {
+                ipcRenderer.send('rescan-file', currentFile.path);
+                setFeedback({ type: 'info', message: 'Đang quét lại file kết quả...' });
+            }
+        }
+    };
+
     // --- Tracker Actions ---
 
     const handleRetryStuck = async () => {
@@ -333,7 +344,6 @@ const App: React.FC = () => {
             </header>
 
             <div className="flex-1 p-6 overflow-hidden bg-white relative">
-                {/* Fix: Use CSS gradient instead of external URL to prevent 404 error */}
                 <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:4px_4px] pointer-events-none"></div>
                 
                 <div className="max-w-[1600px] mx-auto h-full overflow-y-auto custom-scrollbar relative z-10">
@@ -366,7 +376,7 @@ const App: React.FC = () => {
                                 }
                             }} 
                             onSetToolFlowPath={() => isDesktop && ipcRenderer && ipcRenderer.invoke('set-tool-flow-path')}
-                            onReloadVideos={() => {}} 
+                            onReloadVideos={handleReloadVideos} 
                             onRetryStuck={handleRetryStuck} 
                             onRetryJob={handleRetryJob} 
                             onDeleteVideo={handleDeleteVideo}
@@ -391,7 +401,7 @@ const App: React.FC = () => {
                     title="CẬP NHẬT MỚI" 
                     message="Phiên bản mới đã được tải xuống. Khởi động lại ứng dụng để áp dụng thay đổi?" 
                     type="update"
-                    onClose={() => setUpdateDownloaded(false)} // Cho phép đóng nếu chưa muốn update ngay
+                    onClose={() => setUpdateDownloaded(false)} 
                     onConfirm={() => {
                         if(isDesktop && ipcRenderer) ipcRenderer.invoke('restart-app-update');
                     }}

@@ -193,23 +193,27 @@ function setupAutoUpdater() {
  * Hàm hỗ trợ lấy đường dẫn Icon chuẩn xác
  */
 function getIconPath() {
-    // Ưu tiên tệp .ico trên Windows và .png trên các hệ điều hành khác cho Taskbar
+    // Windows ưu tiên .ico, Linux/Taskbar ưu tiên .png
     const ext = process.platform === 'win32' ? 'ico' : 'png';
-    // Khi app đóng gói, thư mục assets nằm cùng cấp với main.js hoặc trong dist/
-    const iconPath = app.isPackaged 
-        ? path.join(__dirname, 'assets', `icon.${ext}`)
-        : path.join(__dirname, 'assets', `icon.${ext}`);
+    const iconName = `icon.${ext}`;
     
-    // Kiểm tra xem file có tồn tại không, nếu không lấy PNG làm dự phòng
-    if (fs.existsSync(iconPath)) return iconPath;
-    return path.join(__dirname, 'assets', 'icon.png');
+    // Khi app đã đóng gói, icon nằm trong thư mục resources hoặc cùng cấp main.js tùy cấu hình build
+    // Thông thường build-electron sẽ đưa thư mục assets vào root của gói ứng dụng
+    let iconPath = path.join(__dirname, 'assets', iconName);
+    
+    if (!fs.existsSync(iconPath)) {
+        // Dự phòng nếu không tìm thấy file theo extension cụ thể
+        iconPath = path.join(__dirname, 'assets', 'icon.png');
+    }
+    
+    return iconPath;
 }
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400, height: 900,
     webPreferences: { contextIsolation: false, nodeIntegration: true },
-    icon: getIconPath(), // Cấu hình Icon Taskbar
+    icon: getIconPath(), // QUAN TRỌNG: Thiết lập icon cho cửa sổ và thanh taskbar
     backgroundColor: '#ffffff'
   });
   
@@ -238,6 +242,17 @@ ipcMain.handle('update-jobs', async (event, { filePath, updates }) => { try { if
 ipcMain.handle('delete-file', async (event, filePath) => { try { if (fs.existsSync(filePath)) { fs.unlinkSync(filePath); return { success: true }; } return { success: true }; } catch (e) { return { success: false, error: e.message }; } });
 
 const handleFileOrFolderChange = (event, filePath) => { try { setTimeout(() => { if (!fs.existsSync(filePath)) return; const buf = fs.readFileSync(filePath); const raw = parseExcelData(buf); const { updatedJobs } = syncStatsAndState(filePath, raw, false); event.sender.send('file-content-updated', { path: filePath, content: buf, discoveredStatus: updatedJobs }); }, 500); } catch(e) {} };
+
+ipcMain.on('rescan-file', (event, filePath) => {
+    try { 
+        if (fs.existsSync(filePath)) { 
+            const buf = fs.readFileSync(filePath); 
+            const raw = parseExcelData(buf); 
+            const { updatedJobs } = syncStatsAndState(filePath, raw, false); 
+            event.sender.send('file-content-updated', { path: filePath, content: buf, discoveredStatus: updatedJobs }); 
+        } 
+    } catch (e) {}
+});
 
 ipcMain.on('start-watching-file', (event, filePath) => {
     if (fileWatchers.has(filePath)) return;

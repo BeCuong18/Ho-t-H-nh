@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { TrackedFile, VideoJob, JobStatus } from '../types';
 import { PlayIcon, FolderIcon, TrashIcon, RetryIcon, UploadIcon, CogIcon, ExternalLinkIcon, CheckIcon, CopyIcon, VideoIcon } from './Icons';
@@ -54,7 +55,6 @@ export const Tracker: React.FC<TrackerProps> = (props) => {
         const encodedPath = encodeURI(normalized);
 
         // 3. Thêm timestamp để tránh cache (browser sẽ tải lại ảnh nếu timestamp thay đổi)
-        // Dùng timestamp từ job update hoặc thời gian hiện tại
         return `file:///${encodedPath}?v=${timestamp || Date.now()}`;
     };
 
